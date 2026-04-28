@@ -262,8 +262,8 @@
   // Set WORKER_URL after deploying the Cloudflare Worker (see workers/).
   // Until then, agent search falls back to bag-of-words over source_text.
   const CONFIG = {
-    WORKER_URL: '',                  // e.g. 'https://dash-embed-query.<your-subdomain>.workers.dev'
-    SIMILARITY_FLOOR: 0.20,          // cosine sim below this is treated as no match
+    WORKER_URL: 'https://dash-embed-query.ecool50.workers.dev',
+    SIMILARITY_FLOOR: 0.45,          // bge-large cosine sim is tighter than OpenAI's; 0.45 ~ "topical match"
     TOP_K: 8,
   };
 
