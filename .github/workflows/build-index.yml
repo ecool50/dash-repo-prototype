@@ -35,8 +35,9 @@ jobs:
             const dir = "projects";
             const files = fs.readdirSync(dir).filter(f => f.endsWith(".json")).sort();
             const projects = files.map(f => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
+            // No built_at field — would change on every run and trigger
+            // a no-op commit loop. Use git log on this file for build time.
             const out = {
-              built_at: new Date().toISOString(),
               schema_version: "v1",
               count: projects.length,
               projects,
