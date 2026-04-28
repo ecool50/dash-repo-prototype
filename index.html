@@ -258,6 +258,15 @@
 <script type="text/babel">
   const { useState, useRef, useEffect } = React;
 
+  // ─── CONFIG ─────────────────────────────────────────────────────────
+  // Set WORKER_URL after deploying the Cloudflare Worker (see workers/).
+  // Until then, agent search falls back to bag-of-words over source_text.
+  const CONFIG = {
+    WORKER_URL: '',                  // e.g. 'https://dash-embed-query.<your-subdomain>.workers.dev'
+    SIMILARITY_FLOOR: 0.20,          // cosine sim below this is treated as no match
+    TOP_K: 8,
+  };
+
   // Projects are loaded from index/index.json at bootstrap (see end of script).
   let PROJECTS = [];
 
@@ -350,20 +359,75 @@
     return out;
   }
 
-  function searchProjects(visible, fullQuery, context) {
-    let pool = visible;
+  // ─── Vector search helpers ──────────────────────────────────────────
+  function cosineSim(a, b) {
+    if (!a || !b || a.length !== b.length) return 0;
+    let dot = 0, na = 0, nb = 0;
+    for (let i = 0; i < a.length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
+    const denom = Math.sqrt(na) * Math.sqrt(nb);
+    return denom === 0 ? 0 : dot / denom;
+  }
+
+  async function embedQuery(text) {
+    if (!CONFIG.WORKER_URL) return null;
+    const res = await fetch(CONFIG.WORKER_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: text }),
+    });
+    if (!res.ok) throw new Error('Worker ' + res.status);
+    const body = await res.json();
+    return Array.isArray(body.vector) ? body.vector : null;
+  }
+
+  function applyContextFilters(pool, context) {
+    let p = pool;
     if (context.modality) {
       const m = context.modality.toLowerCase();
-      pool = pool.filter(p => p.project_details.data_modality.some(x => x.toLowerCase().includes(m)));
+      p = p.filter(x => x.project_details.data_modality.some(d => d.toLowerCase().includes(m)));
     }
     if (context.status) {
-      pool = pool.filter(p => p.status === context.status);
+      p = p.filter(x => x.status === context.status);
     }
-    const tokens = tokenize(fullQuery);
-    const scored = pool.map(p => ({ p, s: scoreProject(p, tokens) }));
-    return scored
+    return p;
+  }
+
+  function rankByVector(pool, queryVec) {
+    return pool
+      .map(p => ({ p, s: cosineSim(queryVec, p.embedding?.vector) }))
+      .filter(x => x.s >= CONFIG.SIMILARITY_FLOOR)
+      .sort((a, b) => b.s - a.s);
+  }
+
+  function rankByTokens(pool, tokens) {
+    return pool
+      .map(p => ({ p, s: scoreProject(p, tokens) }))
       .filter(x => x.s > 0)
       .sort((a, b) => b.s - a.s);
+  }
+
+  // Hybrid search: vector if Worker + project vectors are available,
+  // bag-of-words fallback otherwise. Same async signature either way.
+  async function searchProjects(pool, fullQuery, context) {
+    const filtered = applyContextFilters(pool, context);
+    const tokens = tokenize(fullQuery);
+
+    // Try vector path
+    if (CONFIG.WORKER_URL && filtered.some(p => Array.isArray(p.embedding?.vector))) {
+      try {
+        const queryVec = await embedQuery(fullQuery);
+        if (queryVec) {
+          const withVecs = filtered.filter(p => Array.isArray(p.embedding?.vector));
+          const ranked = rankByVector(withVecs, queryVec);
+          if (ranked.length > 0) return ranked;
+          // Vector path produced nothing — fall through to bag-of-words
+        }
+      } catch (e) {
+        console.warn('Vector search failed, falling back to bag-of-words:', e.message);
+      }
+    }
+
+    return rankByTokens(filtered, tokens);
   }
 
   // Visibility tiers a role can discover. Tier vocabulary matches schema_v1.
@@ -611,10 +675,10 @@
       return `Query: "${q}" · filters { ${filters.join(', ') || '-'} } · RBAC gate access.visibility ∈ [${rolesStr}]`;
     };
 
-    const runSearch = (query, newContext) => {
-      const ranked = searchProjects(visible, query, newContext);
-      const top    = ranked.slice(0, 5).map(r => r.p);
-      const candidatesAll = searchProjects(PROJECTS, query, newContext);
+    const runSearch = async (query, newContext) => {
+      const ranked = await searchProjects(visible, query, newContext);
+      const top    = ranked.slice(0, CONFIG.TOP_K).map(r => r.p);
+      const candidatesAll = await searchProjects(PROJECTS, query, newContext);
       const restricted = candidatesAll.length - ranked.length;
       return { top, restricted, total: ranked.length };
     };
@@ -665,8 +729,8 @@
 
         // Emit thinking + results
         setMessages(m => [...m, { role: 'agent', type: 'thinking', text: formatThinking(text, newContext) }]);
-        setTimeout(() => {
-          const { top, restricted, total } = runSearch(text, newContext);
+        setTimeout(async () => {
+          const { top, restricted, total } = await runSearch(text, newContext);
           let intro;
           if (top.length === 0) {
             intro = mode === 'friendly'
