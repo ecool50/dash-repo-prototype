@@ -380,28 +380,34 @@
     return Array.isArray(body.vector) ? body.vector : null;
   }
 
-  function applyContextFilters(pool, context) {
-    let p = pool;
-    if (context.modality) {
-      const m = context.modality.toLowerCase();
-      p = p.filter(x => x.project_details.data_modality.some(d => d.toLowerCase().includes(m)));
-    }
-    if (context.status) {
-      p = p.filter(x => x.status === context.status);
-    }
-    return p;
+  // Status is still a hard filter (active vs complete is unambiguous).
+  // Modality is NOT — it's applied as a soft boost during ranking so a query
+  // for "immune profiling" still finds CyTOF work even after the user
+  // answers "imaging" to a clarifier.
+  function applyHardFilters(pool, context) {
+    if (context.status) return pool.filter(x => x.status === context.status);
+    return pool;
   }
 
-  function rankByVector(pool, queryVec) {
+  function modalityBoost(p, modality) {
+    if (!modality) return 0;
+    const m = modality.toLowerCase();
+    return p.project_details.data_modality.some(d => d.toLowerCase().includes(m)) ? 0.10 : 0;
+  }
+
+  function rankByVector(pool, queryVec, context) {
     return pool
-      .map(p => ({ p, s: cosineSim(queryVec, p.embedding?.vector) }))
-      .filter(x => x.s >= CONFIG.SIMILARITY_FLOOR)
+      .map(p => {
+        const sim = cosineSim(queryVec, p.embedding?.vector);
+        return { p, s: sim + modalityBoost(p, context.modality), sim };
+      })
+      .filter(x => x.sim >= CONFIG.SIMILARITY_FLOOR)
       .sort((a, b) => b.s - a.s);
   }
 
-  function rankByTokens(pool, tokens) {
+  function rankByTokens(pool, tokens, context) {
     return pool
-      .map(p => ({ p, s: scoreProject(p, tokens) }))
+      .map(p => ({ p, s: scoreProject(p, tokens) + modalityBoost(p, context.modality) }))
       .filter(x => x.s > 0)
       .sort((a, b) => b.s - a.s);
   }
@@ -409,7 +415,7 @@
   // Hybrid search: vector if Worker + project vectors are available,
   // bag-of-words fallback otherwise. Same async signature either way.
   async function searchProjects(pool, fullQuery, context) {
-    const filtered = applyContextFilters(pool, context);
+    const filtered = applyHardFilters(pool, context);
     const tokens = tokenize(fullQuery);
 
     // Try vector path
@@ -418,7 +424,7 @@
         const queryVec = await embedQuery(fullQuery);
         if (queryVec) {
           const withVecs = filtered.filter(p => Array.isArray(p.embedding?.vector));
-          const ranked = rankByVector(withVecs, queryVec);
+          const ranked = rankByVector(withVecs, queryVec, context);
           if (ranked.length > 0) return ranked;
           // Vector path produced nothing — fall through to bag-of-words
         }
@@ -427,7 +433,7 @@
       }
     }
 
-    return rankByTokens(filtered, tokens);
+    return rankByTokens(filtered, tokens, context);
   }
 
   // Visibility tiers a role can discover. Tier vocabulary matches schema_v1.
@@ -707,14 +713,19 @@
       setContext(newContext);
       setMessages(m => [...m, userMsg]);
 
-      // Decide: clarify or search
+      // Trust vector search. Only clarify when the query is genuinely vague:
+      // <= 2 content tokens AND no modality/tool/disease signal yet. Anything
+      // longer goes straight to semantic ranking.
+      const contentTokens = tokenize(text);
       const directHasModality = Boolean(newContext.modality);
       const directHasTool     = /\b(seurat|limma|edger|dep|cytof|fgsea|spotlight|mixomics|diablo|caret|phyloseq|monocle|lme4)\b/i.test(text);
-      const directHasDisease  = /\b(skin|inflammation|diabetes|metabolic|cancer|tumour|tumor|autoimmune|cardiovascular|neurodegenerative|microbiome|endocrine|bowel)\b/i.test(text);
+      const directHasDisease  = /\b(skin|inflammation|diabetes|metabolic|cancer|tumour|tumor|autoimmune|cardiovascular|neurodegenerative|microbiome|endocrine|bowel|immune|immunology)\b/i.test(text);
       const askedClarifyBefore = Boolean(pendingQuestion);
 
-      const shouldSearch = directHasModality || directHasTool || askedClarifyBefore ||
-                           (directHasDisease && (newContext.status || text.length > 30));
+      const shouldSearch =
+        askedClarifyBefore ||
+        contentTokens.length >= 3 ||
+        directHasModality || directHasTool || directHasDisease;
 
       setTimeout(() => {
         if (!shouldSearch) {
