@@ -1,0 +1,51 @@
+{
+  "ref_number": "A09",
+  "title": "Imaging-based analysis of a neurodegenerative-disease cohort",
+  "status": "active",
+  "created_at": "2026-01-08T09:00:00Z",
+  "completed_at": null,
+  "updated_at": "2026-04-25T16:00:00Z",
+  "investigators": {
+    "chief_investigator": "Prof. Naomi Strickland",
+    "lead_analyst": "Dr. Priya Ramesh",
+    "supervisor": "Prof. Naomi Strickland"
+  },
+  "project_details": {
+    "research_area": ["neurology"],
+    "disease": ["neurodegenerative disease"],
+    "data_modality": ["imaging", "MRI"],
+    "sample_info": { "sample_type": "brain MRI", "n_samples": 210, "organism": "human" }
+  },
+  "analytical_methods": {
+    "primary_methods": ["feature extraction", "classification", "cross-validation"],
+    "tools_packages": ["caret", "MRIcloud", "ggplot2"],
+    "programming_languages": ["R", "Python"],
+    "framework": "Quarto"
+  },
+  "findings": {
+    "executive_summary": "Structural and functional MRI features extracted across a neurodegenerative-disease cohort, with classification against a healthy-control group."
+  },
+  "outputs": {
+    "github_repo": "https://github.com/CPC-DASH/ref-A09",
+    "report_url": "https://cpc-dash.github.io/ref-A09/",
+    "report_layout": "multiple"
+  },
+  "governance": { "indigenous_health": false, "ethics_required": true },
+  "tags": {
+    "asana_tags": ["imaging", "neurology"],
+    "method_tags": ["classification", "feature-extraction"]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal",
+    "owner": { "ci_name": "Prof. Naomi Strickland", "lead_analyst": "Dr. Priya Ramesh" }
+  },
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "vector": null,
+    "source_text": "Imaging-based analysis of a neurodegenerative-disease cohort | Structural and functional MRI features extracted across a neurodegenerative-disease cohort, with classification against a healthy-control group. | Methods: feature extraction, classification, cross-validation | Data: imaging, MRI | Disease: neurodegenerative disease | Tools: caret, MRIcloud, ggplot2"
+  }
+}

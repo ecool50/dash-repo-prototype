@@ -1,0 +1,51 @@
+{
+  "ref_number": "A07",
+  "title": "Longitudinal cohort analysis of a cardiovascular marker",
+  "status": "complete",
+  "created_at": "2025-06-18T09:00:00Z",
+  "completed_at": "2026-02-25T16:00:00Z",
+  "updated_at": "2026-02-25T16:00:00Z",
+  "investigators": {
+    "chief_investigator": "Prof. Helena Vasquez",
+    "lead_analyst": "Dr. Liam Novak",
+    "supervisor": "Prof. Helena Vasquez"
+  },
+  "project_details": {
+    "research_area": ["cardiology"],
+    "disease": ["cardiovascular disease"],
+    "data_modality": ["clinical"],
+    "sample_info": { "sample_type": "plasma", "n_samples": 1400, "organism": "human" }
+  },
+  "analytical_methods": {
+    "primary_methods": ["mixed-effects modelling", "survival analysis", "regression"],
+    "tools_packages": ["lme4", "survival", "ggplot2"],
+    "programming_languages": ["R"],
+    "framework": "Quarto"
+  },
+  "findings": {
+    "executive_summary": "Mixed-effects modelling of a circulating cardiovascular marker over repeated measurements in a longitudinal cohort, with survival analysis of hard endpoints."
+  },
+  "outputs": {
+    "github_repo": "https://github.com/CPC-DASH/ref-A07",
+    "report_url": "https://cpc-dash.github.io/ref-A07/",
+    "report_layout": "multiple"
+  },
+  "governance": { "indigenous_health": false, "ethics_required": true },
+  "tags": {
+    "asana_tags": ["cardiology", "longitudinal"],
+    "method_tags": ["mixed-effects", "survival"]
+  },
+  "access": {
+    "preset": "published",
+    "discovery": "cpc_engaged",
+    "summary": "cpc_engaged",
+    "report_link": "cpc_engaged",
+    "code_link": "cpc_engaged",
+    "owner": { "ci_name": "Prof. Helena Vasquez", "lead_analyst": "Dr. Liam Novak" }
+  },
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "vector": null,
+    "source_text": "Longitudinal cohort analysis of a cardiovascular marker | Mixed-effects modelling of a circulating cardiovascular marker over repeated measurements in a longitudinal cohort, with survival analysis of hard endpoints. | Methods: mixed-effects modelling, survival analysis, regression | Data: clinical | Disease: cardiovascular disease | Tools: lme4, survival, ggplot2"
+  }
+}

@@ -1,0 +1,842 @@
+{
+  "built_at": "2026-04-28T02:32:58.947Z",
+  "schema_version": "v1",
+  "count": 10,
+  "projects": [
+    {
+      "ref_number": "A01",
+      "title": "Proteomic profiling of a chronic inflammatory skin condition",
+      "status": "complete",
+      "created_at": "2026-01-15T09:00:00Z",
+      "completed_at": "2026-04-20T16:00:00Z",
+      "updated_at": "2026-04-20T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Helena Vasquez",
+        "lead_analyst": "Dr. Maya Tanaka",
+        "supervisor": "Prof. Helena Vasquez"
+      },
+      "project_details": {
+        "research_area": [
+          "dermatology",
+          "immunology"
+        ],
+        "disease": [
+          "inflammatory skin condition"
+        ],
+        "data_modality": [
+          "proteomics",
+          "mass spectrometry"
+        ],
+        "sample_info": {
+          "sample_type": "skin biopsy",
+          "n_samples": 48,
+          "organism": "human"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "differential expression",
+          "pathway analysis"
+        ],
+        "tools_packages": [
+          "limma",
+          "DEP",
+          "clusterProfiler"
+        ],
+        "programming_languages": [
+          "R"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "Mass-spectrometry proteomics on skin biopsies to identify proteins differentially expressed in an inflammatory skin condition. Differential-expression testing followed by pathway enrichment."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A01",
+        "report_url": "https://cpc-dash.github.io/ref-A01/",
+        "report_layout": "single"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": true
+      },
+      "tags": {
+        "asana_tags": [
+          "proteomics"
+        ],
+        "method_tags": [
+          "differential-expression",
+          "pathway-analysis"
+        ]
+      },
+      "access": {
+        "preset": "shared",
+        "discovery": "dash_extended",
+        "summary": "dash_extended",
+        "report_link": "dash_extended",
+        "code_link": "dash_extended",
+        "owner": {
+          "ci_name": "Prof. Helena Vasquez",
+          "lead_analyst": "Dr. Maya Tanaka"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "Proteomic profiling of a chronic inflammatory skin condition | Mass-spectrometry proteomics on skin biopsies to identify proteins differentially expressed in an inflammatory skin condition. Differential-expression testing followed by pathway enrichment. | Methods: differential expression, pathway analysis | Data: proteomics, mass spectrometry | Disease: inflammatory skin condition | Tools: limma, DEP, clusterProfiler"
+      }
+    },
+    {
+      "ref_number": "A02",
+      "title": "Transcriptomic changes in adipose tissue across metabolic-disease severity",
+      "status": "complete",
+      "created_at": "2025-09-08T09:00:00Z",
+      "completed_at": "2026-02-12T16:00:00Z",
+      "updated_at": "2026-02-12T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Marcus Whitford",
+        "lead_analyst": "Dr. Jordan Pereira",
+        "supervisor": "Prof. Marcus Whitford"
+      },
+      "project_details": {
+        "research_area": [
+          "metabolism"
+        ],
+        "disease": [
+          "metabolic disease",
+          "obesity"
+        ],
+        "data_modality": [
+          "RNA-seq"
+        ],
+        "sample_info": {
+          "sample_type": "adipose tissue",
+          "n_samples": 112,
+          "organism": "human"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "differential expression",
+          "GSEA"
+        ],
+        "tools_packages": [
+          "edgeR",
+          "fgsea",
+          "ggplot2"
+        ],
+        "programming_languages": [
+          "R"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "Bulk RNA-seq across stages of a metabolic disease to find genes and pathways that track severity. Differential expression with edgeR and gene-set enrichment."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A02",
+        "report_url": "https://cpc-dash.github.io/ref-A02/",
+        "report_layout": "multiple"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": true
+      },
+      "tags": {
+        "asana_tags": [
+          "transcriptomics"
+        ],
+        "method_tags": [
+          "differential-expression",
+          "gsea"
+        ]
+      },
+      "access": {
+        "preset": "published",
+        "discovery": "cpc_engaged",
+        "summary": "cpc_engaged",
+        "report_link": "cpc_engaged",
+        "code_link": "cpc_engaged",
+        "owner": {
+          "ci_name": "Prof. Marcus Whitford",
+          "lead_analyst": "Dr. Jordan Pereira"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "Transcriptomic changes in adipose tissue across metabolic-disease severity | Bulk RNA-seq across stages of a metabolic disease to find genes and pathways that track severity. Differential expression with edgeR and gene-set enrichment. | Methods: differential expression, GSEA | Data: RNA-seq | Disease: metabolic disease, obesity | Tools: edgeR, fgsea, ggplot2"
+      }
+    },
+    {
+      "ref_number": "A03",
+      "title": "Spatial transcriptomics of a solid-tumour microenvironment",
+      "status": "active",
+      "created_at": "2026-02-03T09:00:00Z",
+      "completed_at": null,
+      "updated_at": "2026-04-22T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Naomi Strickland",
+        "lead_analyst": "Dr. Maya Tanaka",
+        "supervisor": "Prof. Naomi Strickland"
+      },
+      "project_details": {
+        "research_area": [
+          "oncology"
+        ],
+        "disease": [
+          "colorectal cancer"
+        ],
+        "data_modality": [
+          "spatial transcriptomics"
+        ],
+        "sample_info": {
+          "sample_type": "tumour tissue",
+          "n_samples": 24,
+          "organism": "human"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "clustering",
+          "cell-type deconvolution"
+        ],
+        "tools_packages": [
+          "Seurat",
+          "SPOTlight",
+          "ggplot2"
+        ],
+        "programming_languages": [
+          "R"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "Spatial transcriptomics in a colorectal-cancer cohort to characterise tumour-microenvironment structure. Clustering and cell-type deconvolution against a reference single-cell atlas."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A03",
+        "report_url": "https://cpc-dash.github.io/ref-A03/",
+        "report_layout": "single"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": true
+      },
+      "tags": {
+        "asana_tags": [
+          "spatial",
+          "oncology"
+        ],
+        "method_tags": [
+          "clustering",
+          "deconvolution"
+        ]
+      },
+      "access": {
+        "preset": "shared",
+        "discovery": "dash_internal",
+        "summary": "dash_internal",
+        "report_link": "dash_internal",
+        "code_link": "dash_internal",
+        "owner": {
+          "ci_name": "Prof. Naomi Strickland",
+          "lead_analyst": "Dr. Maya Tanaka"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "Spatial transcriptomics of a solid-tumour microenvironment | Spatial transcriptomics in a colorectal-cancer cohort to characterise tumour-microenvironment structure. Clustering and cell-type deconvolution against a reference single-cell atlas. | Methods: clustering, cell-type deconvolution | Data: spatial transcriptomics | Disease: colorectal cancer | Tools: Seurat, SPOTlight, ggplot2"
+      }
+    },
+    {
+      "ref_number": "A04",
+      "title": "Multi-omics biomarker discovery in an endocrine disease",
+      "status": "active",
+      "created_at": "2025-11-20T09:00:00Z",
+      "completed_at": null,
+      "updated_at": "2026-04-15T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Helena Vasquez",
+        "lead_analyst": "Dr. Jordan Pereira",
+        "supervisor": "Prof. Helena Vasquez"
+      },
+      "project_details": {
+        "research_area": [
+          "endocrinology"
+        ],
+        "disease": [
+          "type 2 diabetes",
+          "endocrine disease"
+        ],
+        "data_modality": [
+          "proteomics",
+          "metabolomics"
+        ],
+        "sample_info": {
+          "sample_type": "plasma",
+          "n_samples": 85,
+          "organism": "human"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "multi-omics integration",
+          "classification",
+          "feature selection"
+        ],
+        "tools_packages": [
+          "mixOmics",
+          "DIABLO",
+          "caret"
+        ],
+        "programming_languages": [
+          "R",
+          "Python"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "Integration of plasma proteomics and metabolomics to identify a multi-omics biomarker signature for an endocrine disease. Sparse feature selection and classification."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A04",
+        "report_url": "https://cpc-dash.github.io/ref-A04/",
+        "report_layout": "multiple"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": true
+      },
+      "tags": {
+        "asana_tags": [
+          "multi-omics",
+          "biomarker"
+        ],
+        "method_tags": [
+          "classification",
+          "feature-selection"
+        ]
+      },
+      "access": {
+        "preset": "shared",
+        "discovery": "dash_extended",
+        "summary": "dash_extended",
+        "report_link": "dash_extended",
+        "code_link": "dash_extended",
+        "owner": {
+          "ci_name": "Prof. Helena Vasquez",
+          "lead_analyst": "Dr. Jordan Pereira"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "Multi-omics biomarker discovery in an endocrine disease | Integration of plasma proteomics and metabolomics to identify a multi-omics biomarker signature for an endocrine disease. Sparse feature selection and classification. | Methods: multi-omics integration, classification, feature selection | Data: proteomics, metabolomics | Disease: type 2 diabetes, endocrine disease | Tools: mixOmics, DIABLO, caret"
+      }
+    },
+    {
+      "ref_number": "A05",
+      "title": "Single-cell RNA-seq of a developing tissue",
+      "status": "complete",
+      "created_at": "2025-08-12T09:00:00Z",
+      "completed_at": "2026-01-30T16:00:00Z",
+      "updated_at": "2026-01-30T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Marcus Whitford",
+        "lead_analyst": "Dr. Aisha Okafor",
+        "supervisor": "Prof. Marcus Whitford"
+      },
+      "project_details": {
+        "research_area": [
+          "developmental biology"
+        ],
+        "disease": [
+          "development"
+        ],
+        "data_modality": [
+          "scRNA-seq",
+          "single-cell"
+        ],
+        "sample_info": {
+          "sample_type": "embryonic tissue",
+          "n_samples": 18,
+          "organism": "mouse"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "clustering",
+          "trajectory analysis",
+          "differential expression"
+        ],
+        "tools_packages": [
+          "Seurat",
+          "monocle3",
+          "ggplot2"
+        ],
+        "programming_languages": [
+          "R"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "scRNA-seq profiling of a developing tissue with trajectory analysis to reconstruct lineage relationships and gene dynamics over pseudotime."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A05",
+        "report_url": "https://cpc-dash.github.io/ref-A05/",
+        "report_layout": "single"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": false
+      },
+      "tags": {
+        "asana_tags": [
+          "scrna-seq"
+        ],
+        "method_tags": [
+          "trajectory",
+          "clustering"
+        ]
+      },
+      "access": {
+        "preset": "published",
+        "discovery": "cpc_engaged",
+        "summary": "cpc_engaged",
+        "report_link": "cpc_engaged",
+        "code_link": "cpc_engaged",
+        "owner": {
+          "ci_name": "Prof. Marcus Whitford",
+          "lead_analyst": "Dr. Aisha Okafor"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "Single-cell RNA-seq of a developing tissue | scRNA-seq profiling of a developing tissue with trajectory analysis to reconstruct lineage relationships and gene dynamics over pseudotime. | Methods: clustering, trajectory analysis, differential expression | Data: scRNA-seq, single-cell | Disease: development | Tools: Seurat, monocle3, ggplot2"
+      }
+    },
+    {
+      "ref_number": "A06",
+      "title": "Mass-cytometry immune profiling in an autoimmune condition",
+      "status": "complete",
+      "created_at": "2025-10-05T09:00:00Z",
+      "completed_at": "2026-03-08T16:00:00Z",
+      "updated_at": "2026-03-08T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Naomi Strickland",
+        "lead_analyst": "Dr. Aisha Okafor",
+        "supervisor": "Prof. Naomi Strickland"
+      },
+      "project_details": {
+        "research_area": [
+          "immunology"
+        ],
+        "disease": [
+          "autoimmune condition"
+        ],
+        "data_modality": [
+          "mass cytometry",
+          "CyTOF"
+        ],
+        "sample_info": {
+          "sample_type": "PBMC",
+          "n_samples": 64,
+          "organism": "human"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "clustering",
+          "differential abundance"
+        ],
+        "tools_packages": [
+          "CytoNorm",
+          "FlowSOM",
+          "diffcyt"
+        ],
+        "programming_languages": [
+          "R"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "High-dimensional flow and mass cytometry of peripheral immune cells in an autoimmune condition. Unsupervised clustering and differential-abundance testing."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A06",
+        "report_url": "https://cpc-dash.github.io/ref-A06/",
+        "report_layout": "single"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": true
+      },
+      "tags": {
+        "asana_tags": [
+          "cytometry",
+          "immunology"
+        ],
+        "method_tags": [
+          "clustering",
+          "differential-abundance"
+        ]
+      },
+      "access": {
+        "preset": "shared",
+        "discovery": "dash_extended",
+        "summary": "dash_extended",
+        "report_link": "dash_extended",
+        "code_link": "dash_extended",
+        "owner": {
+          "ci_name": "Prof. Naomi Strickland",
+          "lead_analyst": "Dr. Aisha Okafor"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "Mass-cytometry immune profiling in an autoimmune condition | High-dimensional flow and mass cytometry of peripheral immune cells in an autoimmune condition. Unsupervised clustering and differential-abundance testing. | Methods: clustering, differential abundance | Data: mass cytometry, CyTOF | Disease: autoimmune condition | Tools: CytoNorm, FlowSOM, diffcyt"
+      }
+    },
+    {
+      "ref_number": "A07",
+      "title": "Longitudinal cohort analysis of a cardiovascular marker",
+      "status": "complete",
+      "created_at": "2025-06-18T09:00:00Z",
+      "completed_at": "2026-02-25T16:00:00Z",
+      "updated_at": "2026-02-25T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Helena Vasquez",
+        "lead_analyst": "Dr. Liam Novak",
+        "supervisor": "Prof. Helena Vasquez"
+      },
+      "project_details": {
+        "research_area": [
+          "cardiology"
+        ],
+        "disease": [
+          "cardiovascular disease"
+        ],
+        "data_modality": [
+          "clinical"
+        ],
+        "sample_info": {
+          "sample_type": "plasma",
+          "n_samples": 1400,
+          "organism": "human"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "mixed-effects modelling",
+          "survival analysis",
+          "regression"
+        ],
+        "tools_packages": [
+          "lme4",
+          "survival",
+          "ggplot2"
+        ],
+        "programming_languages": [
+          "R"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "Mixed-effects modelling of a circulating cardiovascular marker over repeated measurements in a longitudinal cohort, with survival analysis of hard endpoints."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A07",
+        "report_url": "https://cpc-dash.github.io/ref-A07/",
+        "report_layout": "multiple"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": true
+      },
+      "tags": {
+        "asana_tags": [
+          "cardiology",
+          "longitudinal"
+        ],
+        "method_tags": [
+          "mixed-effects",
+          "survival"
+        ]
+      },
+      "access": {
+        "preset": "published",
+        "discovery": "cpc_engaged",
+        "summary": "cpc_engaged",
+        "report_link": "cpc_engaged",
+        "code_link": "cpc_engaged",
+        "owner": {
+          "ci_name": "Prof. Helena Vasquez",
+          "lead_analyst": "Dr. Liam Novak"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "Longitudinal cohort analysis of a cardiovascular marker | Mixed-effects modelling of a circulating cardiovascular marker over repeated measurements in a longitudinal cohort, with survival analysis of hard endpoints. | Methods: mixed-effects modelling, survival analysis, regression | Data: clinical | Disease: cardiovascular disease | Tools: lme4, survival, ggplot2"
+      }
+    },
+    {
+      "ref_number": "A08",
+      "title": "Plasma metabolomics across a dietary-intervention trial",
+      "status": "complete",
+      "created_at": "2025-07-22T09:00:00Z",
+      "completed_at": "2026-03-18T16:00:00Z",
+      "updated_at": "2026-03-18T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Marcus Whitford",
+        "lead_analyst": "Dr. Liam Novak",
+        "supervisor": "Prof. Marcus Whitford"
+      },
+      "project_details": {
+        "research_area": [
+          "nutrition"
+        ],
+        "disease": [
+          "nutrition",
+          "metabolic disease"
+        ],
+        "data_modality": [
+          "metabolomics"
+        ],
+        "sample_info": {
+          "sample_type": "plasma",
+          "n_samples": 96,
+          "organism": "human"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "paired tests",
+          "mixed-effects modelling",
+          "pathway analysis"
+        ],
+        "tools_packages": [
+          "xcms",
+          "limma",
+          "MetaboAnalystR"
+        ],
+        "programming_languages": [
+          "R"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "Untargeted plasma metabolomics before and after a dietary intervention. Paired tests and mixed-effects models, with pathway enrichment on hits."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A08",
+        "report_url": "https://cpc-dash.github.io/ref-A08/",
+        "report_layout": "single"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": true
+      },
+      "tags": {
+        "asana_tags": [
+          "metabolomics",
+          "nutrition"
+        ],
+        "method_tags": [
+          "paired-tests",
+          "mixed-effects"
+        ]
+      },
+      "access": {
+        "preset": "published",
+        "discovery": "cpc_engaged",
+        "summary": "cpc_engaged",
+        "report_link": "cpc_engaged",
+        "code_link": "cpc_engaged",
+        "owner": {
+          "ci_name": "Prof. Marcus Whitford",
+          "lead_analyst": "Dr. Liam Novak"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "Plasma metabolomics across a dietary-intervention trial | Untargeted plasma metabolomics before and after a dietary intervention. Paired tests and mixed-effects models, with pathway enrichment on hits. | Methods: paired tests, mixed-effects modelling, pathway analysis | Data: metabolomics | Disease: nutrition, metabolic disease | Tools: xcms, limma, MetaboAnalystR"
+      }
+    },
+    {
+      "ref_number": "A09",
+      "title": "Imaging-based analysis of a neurodegenerative-disease cohort",
+      "status": "active",
+      "created_at": "2026-01-08T09:00:00Z",
+      "completed_at": null,
+      "updated_at": "2026-04-25T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Naomi Strickland",
+        "lead_analyst": "Dr. Priya Ramesh",
+        "supervisor": "Prof. Naomi Strickland"
+      },
+      "project_details": {
+        "research_area": [
+          "neurology"
+        ],
+        "disease": [
+          "neurodegenerative disease"
+        ],
+        "data_modality": [
+          "imaging",
+          "MRI"
+        ],
+        "sample_info": {
+          "sample_type": "brain MRI",
+          "n_samples": 210,
+          "organism": "human"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "feature extraction",
+          "classification",
+          "cross-validation"
+        ],
+        "tools_packages": [
+          "caret",
+          "MRIcloud",
+          "ggplot2"
+        ],
+        "programming_languages": [
+          "R",
+          "Python"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "Structural and functional MRI features extracted across a neurodegenerative-disease cohort, with classification against a healthy-control group."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A09",
+        "report_url": "https://cpc-dash.github.io/ref-A09/",
+        "report_layout": "multiple"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": true
+      },
+      "tags": {
+        "asana_tags": [
+          "imaging",
+          "neurology"
+        ],
+        "method_tags": [
+          "classification",
+          "feature-extraction"
+        ]
+      },
+      "access": {
+        "preset": "shared",
+        "discovery": "dash_internal",
+        "summary": "dash_internal",
+        "report_link": "dash_internal",
+        "code_link": "dash_internal",
+        "owner": {
+          "ci_name": "Prof. Naomi Strickland",
+          "lead_analyst": "Dr. Priya Ramesh"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "Imaging-based analysis of a neurodegenerative-disease cohort | Structural and functional MRI features extracted across a neurodegenerative-disease cohort, with classification against a healthy-control group. | Methods: feature extraction, classification, cross-validation | Data: imaging, MRI | Disease: neurodegenerative disease | Tools: caret, MRIcloud, ggplot2"
+      }
+    },
+    {
+      "ref_number": "A10",
+      "title": "16S microbiome analysis in an inflammatory bowel condition",
+      "status": "active",
+      "created_at": "2025-12-12T09:00:00Z",
+      "completed_at": null,
+      "updated_at": "2026-04-18T16:00:00Z",
+      "investigators": {
+        "chief_investigator": "Prof. Marcus Whitford",
+        "lead_analyst": "Dr. Priya Ramesh",
+        "supervisor": "Prof. Marcus Whitford"
+      },
+      "project_details": {
+        "research_area": [
+          "gastroenterology",
+          "microbiome"
+        ],
+        "disease": [
+          "inflammatory bowel condition"
+        ],
+        "data_modality": [
+          "microbiome",
+          "16S"
+        ],
+        "sample_info": {
+          "sample_type": "stool",
+          "n_samples": 132,
+          "organism": "human"
+        }
+      },
+      "analytical_methods": {
+        "primary_methods": [
+          "diversity metrics",
+          "differential abundance"
+        ],
+        "tools_packages": [
+          "phyloseq",
+          "DADA2",
+          "ggplot2"
+        ],
+        "programming_languages": [
+          "R"
+        ],
+        "framework": "Quarto"
+      },
+      "findings": {
+        "executive_summary": "16S rRNA microbiome profiling in an inflammatory bowel condition, with alpha and beta diversity comparisons and differential-abundance testing at the genus level."
+      },
+      "outputs": {
+        "github_repo": "https://github.com/CPC-DASH/ref-A10",
+        "report_url": "https://cpc-dash.github.io/ref-A10/",
+        "report_layout": "single"
+      },
+      "governance": {
+        "indigenous_health": false,
+        "ethics_required": true
+      },
+      "tags": {
+        "asana_tags": [
+          "microbiome",
+          "16s"
+        ],
+        "method_tags": [
+          "diversity",
+          "differential-abundance"
+        ]
+      },
+      "access": {
+        "preset": "shared",
+        "discovery": "dash_extended",
+        "summary": "dash_extended",
+        "report_link": "dash_extended",
+        "code_link": "dash_extended",
+        "owner": {
+          "ci_name": "Prof. Marcus Whitford",
+          "lead_analyst": "Dr. Priya Ramesh"
+        }
+      },
+      "embedding": {
+        "model": "text-embedding-3-small",
+        "vector": null,
+        "source_text": "16S microbiome analysis in an inflammatory bowel condition | 16S rRNA microbiome profiling in an inflammatory bowel condition, with alpha and beta diversity comparisons and differential-abundance testing at the genus level. | Methods: diversity metrics, differential abundance | Data: microbiome, 16S | Disease: inflammatory bowel condition | Tools: phyloseq, DADA2, ggplot2"
+      }
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "ref_number": "A05",
+  "title": "Single-cell RNA-seq of a developing tissue",
+  "status": "complete",
+  "created_at": "2025-08-12T09:00:00Z",
+  "completed_at": "2026-01-30T16:00:00Z",
+  "updated_at": "2026-01-30T16:00:00Z",
+  "investigators": {
+    "chief_investigator": "Prof. Marcus Whitford",
+    "lead_analyst": "Dr. Aisha Okafor",
+    "supervisor": "Prof. Marcus Whitford"
+  },
+  "project_details": {
+    "research_area": ["developmental biology"],
+    "disease": ["development"],
+    "data_modality": ["scRNA-seq", "single-cell"],
+    "sample_info": { "sample_type": "embryonic tissue", "n_samples": 18, "organism": "mouse" }
+  },
+  "analytical_methods": {
+    "primary_methods": ["clustering", "trajectory analysis", "differential expression"],
+    "tools_packages": ["Seurat", "monocle3", "ggplot2"],
+    "programming_languages": ["R"],
+    "framework": "Quarto"
+  },
+  "findings": {
+    "executive_summary": "scRNA-seq profiling of a developing tissue with trajectory analysis to reconstruct lineage relationships and gene dynamics over pseudotime."
+  },
+  "outputs": {
+    "github_repo": "https://github.com/CPC-DASH/ref-A05",
+    "report_url": "https://cpc-dash.github.io/ref-A05/",
+    "report_layout": "single"
+  },
+  "governance": { "indigenous_health": false, "ethics_required": false },
+  "tags": {
+    "asana_tags": ["scrna-seq"],
+    "method_tags": ["trajectory", "clustering"]
+  },
+  "access": {
+    "preset": "published",
+    "discovery": "cpc_engaged",
+    "summary": "cpc_engaged",
+    "report_link": "cpc_engaged",
+    "code_link": "cpc_engaged",
+    "owner": { "ci_name": "Prof. Marcus Whitford", "lead_analyst": "Dr. Aisha Okafor" }
+  },
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "vector": null,
+    "source_text": "Single-cell RNA-seq of a developing tissue | scRNA-seq profiling of a developing tissue with trajectory analysis to reconstruct lineage relationships and gene dynamics over pseudotime. | Methods: clustering, trajectory analysis, differential expression | Data: scRNA-seq, single-cell | Disease: development | Tools: Seurat, monocle3, ggplot2"
+  }
+}

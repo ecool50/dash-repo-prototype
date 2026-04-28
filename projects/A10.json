@@ -1,0 +1,51 @@
+{
+  "ref_number": "A10",
+  "title": "16S microbiome analysis in an inflammatory bowel condition",
+  "status": "active",
+  "created_at": "2025-12-12T09:00:00Z",
+  "completed_at": null,
+  "updated_at": "2026-04-18T16:00:00Z",
+  "investigators": {
+    "chief_investigator": "Prof. Marcus Whitford",
+    "lead_analyst": "Dr. Priya Ramesh",
+    "supervisor": "Prof. Marcus Whitford"
+  },
+  "project_details": {
+    "research_area": ["gastroenterology", "microbiome"],
+    "disease": ["inflammatory bowel condition"],
+    "data_modality": ["microbiome", "16S"],
+    "sample_info": { "sample_type": "stool", "n_samples": 132, "organism": "human" }
+  },
+  "analytical_methods": {
+    "primary_methods": ["diversity metrics", "differential abundance"],
+    "tools_packages": ["phyloseq", "DADA2", "ggplot2"],
+    "programming_languages": ["R"],
+    "framework": "Quarto"
+  },
+  "findings": {
+    "executive_summary": "16S rRNA microbiome profiling in an inflammatory bowel condition, with alpha and beta diversity comparisons and differential-abundance testing at the genus level."
+  },
+  "outputs": {
+    "github_repo": "https://github.com/CPC-DASH/ref-A10",
+    "report_url": "https://cpc-dash.github.io/ref-A10/",
+    "report_layout": "single"
+  },
+  "governance": { "indigenous_health": false, "ethics_required": true },
+  "tags": {
+    "asana_tags": ["microbiome", "16s"],
+    "method_tags": ["diversity", "differential-abundance"]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_extended",
+    "summary": "dash_extended",
+    "report_link": "dash_extended",
+    "code_link": "dash_extended",
+    "owner": { "ci_name": "Prof. Marcus Whitford", "lead_analyst": "Dr. Priya Ramesh" }
+  },
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "vector": null,
+    "source_text": "16S microbiome analysis in an inflammatory bowel condition | 16S rRNA microbiome profiling in an inflammatory bowel condition, with alpha and beta diversity comparisons and differential-abundance testing at the genus level. | Methods: diversity metrics, differential abundance | Data: microbiome, 16S | Disease: inflammatory bowel condition | Tools: phyloseq, DADA2, ggplot2"
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "$schema_version": "v1",
+  "$status": "working draft — iterate",
+  "$collection": "projects",
+
+  "$required_fields": [
+    "ref_number",
+    "title",
+    "status",
+    "completed_at",
+    "investigators.chief_investigator",
+    "investigators.lead_analyst",
+    "project_details.research_area",
+    "project_details.data_modality",
+    "project_details.sample_info.n_samples",
+    "project_details.sample_info.organism",
+    "analytical_methods.primary_methods",
+    "analytical_methods.tools_packages",
+    "analytical_methods.programming_languages",
+    "findings.executive_summary",
+    "outputs.github_repo",
+    "outputs.report_url",
+    "governance.indigenous_health",
+    "governance.ethics_required",
+    "access.discovery",
+    "access.summary",
+    "access.report_link",
+    "access.code_link",
+    "access.owner.ci_name",
+    "access.owner.lead_analyst",
+    "embedding.source_text"
+  ],
+
+  "$enums": {
+    "status": ["active", "complete", "on_hold", "archived"],
+    "access_tier": ["private", "dash_internal", "dash_extended", "cpc_engaged", "cpc_all", "usyd", "public"],
+    "access_preset": ["draft", "shared", "published"],
+    "report_layout": ["single", "multiple"]
+  },
+
+  "$access_defaults": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  },
+
+  "$deferred_to_v2": [
+    "findings.key_findings (structured Q&A — for now use executive_summary free text)",
+    "engagement block (intake context: support_type, requested_analyses, intake_summary)",
+    "investigators.requesting_researcher (career stage, supervisor consultation flag)",
+    "affiliation block (faculty, school, cpc_member, external_partner)",
+    "project_details.platform.instrument and .assay_type (vendor only in v1)",
+    "project_details.background, research_questions, hypothesis, study_design",
+    "project_details.public_data_repositories",
+    "analytical_methods.method_rationale, deviations_from_plan",
+    "findings.limitations",
+    "outputs.publications, outputs.deliverables (beyond report+code)",
+    "governance.ethics_reference, research_data_store, rds_path, data_sharing_consent, educational_reuse_consent",
+    "access.explicit_grants / explicit_denies",
+    "access.embargo block",
+    "access.reuse_consent block (educational, student_projects, data_challenges, case_study, grant_examples)",
+    "access.access_changes audit trail",
+    "lifecycle block (phase, stakeholder_tier, follow_up_status)"
+  ],
+
+  "$example_document": {
+    "_id": "ObjectId",
+    "ref_number": "0061",
+    "title": "Short descriptive project title",
+    "status": "complete",
+    "created_at": "2026-01-15T09:00:00Z",
+    "completed_at": "2026-04-20T16:00:00Z",
+    "updated_at": "2026-04-20T16:00:00Z",
+
+    "investigators": {
+      "chief_investigator": "Prof. Helena Vasquez",
+      "lead_analyst": "Dr. Maya Tanaka",
+      "collaborators": ["Dr. Aisha Okafor"],
+      "supervisor": "Prof. Marcus Whitford"
+    },
+
+    "project_details": {
+      "research_area": ["immunology"],
+      "disease": ["disease label"],
+      "data_modality": ["proteomics", "mass spectrometry"],
+      "platform": {
+        "vendor": "Vendor name"
+      },
+      "sample_info": {
+        "sample_type": "tissue",
+        "n_samples": 48,
+        "organism": "human"
+      }
+    },
+
+    "analytical_methods": {
+      "primary_methods": ["differential abundance", "pathway enrichment"],
+      "tools_packages": ["limma", "DEP", "clusterProfiler"],
+      "programming_languages": ["R"],
+      "framework": "Quarto"
+    },
+
+    "findings": {
+      "executive_summary": "Three to five sentence summary written by the analyst. Covers what was asked, what was done, what was found, and what's notable. This field drives embedding quality and is the highest-leverage field for agent retrieval.",
+      "next_steps": [
+        "Follow-up analysis 1",
+        "Open question 1"
+      ]
+    },
+
+    "outputs": {
+      "github_repo": "https://github.com/CPC-DASH/ref-0061-short-slug",
+      "report_url": "https://cpc-dash.github.io/ref-0061-short-slug/",
+      "report_layout": "single"
+    },
+
+    "governance": {
+      "indigenous_health": false,
+      "ethics_required": true
+    },
+
+    "tags": {
+      "asana_tags": ["proteomics", "treatment-response"],
+      "method_tags": ["differential-expression", "pathway-analysis"]
+    },
+
+    "access": {
+      "preset": "shared",
+      "discovery": "dash_internal",
+      "summary": "dash_internal",
+      "report_link": "dash_internal",
+      "code_link": "dash_internal",
+      "owner": {
+        "ci_name": "Prof. Helena Vasquez",
+        "lead_analyst": "Dr. Maya Tanaka"
+      }
+    },
+
+    "embedding": {
+      "model": "text-embedding-3-small",
+      "vector": "[1536 floats]",
+      "source_text": "{title} | {findings.executive_summary} | Methods: {analytical_methods.primary_methods} | Data: {project_details.data_modality} | Disease: {project_details.disease} | Tools: {analytical_methods.tools_packages}"
+    }
+  },
+
+  "$indexes": [
+    { "field": "ref_number", "type": "unique" },
+    { "field": "status", "type": "standard" },
+    { "field": "tags.asana_tags", "type": "multikey" },
+    { "field": "tags.method_tags", "type": "multikey" },
+    { "field": "project_details.data_modality", "type": "multikey" },
+    { "field": "project_details.disease", "type": "multikey" },
+    { "field": "access.discovery", "type": "standard" },
+    { "field": "embedding.vector", "type": "vectorSearch", "dimensions": 1536, "similarity": "cosine" }
+  ]
+}

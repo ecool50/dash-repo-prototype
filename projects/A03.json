@@ -1,0 +1,51 @@
+{
+  "ref_number": "A03",
+  "title": "Spatial transcriptomics of a solid-tumour microenvironment",
+  "status": "active",
+  "created_at": "2026-02-03T09:00:00Z",
+  "completed_at": null,
+  "updated_at": "2026-04-22T16:00:00Z",
+  "investigators": {
+    "chief_investigator": "Prof. Naomi Strickland",
+    "lead_analyst": "Dr. Maya Tanaka",
+    "supervisor": "Prof. Naomi Strickland"
+  },
+  "project_details": {
+    "research_area": ["oncology"],
+    "disease": ["colorectal cancer"],
+    "data_modality": ["spatial transcriptomics"],
+    "sample_info": { "sample_type": "tumour tissue", "n_samples": 24, "organism": "human" }
+  },
+  "analytical_methods": {
+    "primary_methods": ["clustering", "cell-type deconvolution"],
+    "tools_packages": ["Seurat", "SPOTlight", "ggplot2"],
+    "programming_languages": ["R"],
+    "framework": "Quarto"
+  },
+  "findings": {
+    "executive_summary": "Spatial transcriptomics in a colorectal-cancer cohort to characterise tumour-microenvironment structure. Clustering and cell-type deconvolution against a reference single-cell atlas."
+  },
+  "outputs": {
+    "github_repo": "https://github.com/CPC-DASH/ref-A03",
+    "report_url": "https://cpc-dash.github.io/ref-A03/",
+    "report_layout": "single"
+  },
+  "governance": { "indigenous_health": false, "ethics_required": true },
+  "tags": {
+    "asana_tags": ["spatial", "oncology"],
+    "method_tags": ["clustering", "deconvolution"]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal",
+    "owner": { "ci_name": "Prof. Naomi Strickland", "lead_analyst": "Dr. Maya Tanaka" }
+  },
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "vector": null,
+    "source_text": "Spatial transcriptomics of a solid-tumour microenvironment | Spatial transcriptomics in a colorectal-cancer cohort to characterise tumour-microenvironment structure. Clustering and cell-type deconvolution against a reference single-cell atlas. | Methods: clustering, cell-type deconvolution | Data: spatial transcriptomics | Disease: colorectal cancer | Tools: Seurat, SPOTlight, ggplot2"
+  }
+}

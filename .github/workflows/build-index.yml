@@ -1,0 +1,58 @@
+name: Build search index
+
+# On merge to main, bundle every projects/*.json into index/index.json.
+# This is the file the static frontend fetches at load.
+#
+# Output schema:
+#   {
+#     "built_at": ISO timestamp,
+#     "schema_version": "v1",
+#     "count": <int>,
+#     "projects": [ <full schema_v1 record>, ... ]
+#   }
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'projects/**.json'
+      - 'schema_v1.json'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bundle index
+        run: |
+          mkdir -p index
+          node -e '
+            const fs = require("fs"), path = require("path");
+            const dir = "projects";
+            const files = fs.readdirSync(dir).filter(f => f.endsWith(".json")).sort();
+            const projects = files.map(f => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
+            const out = {
+              built_at: new Date().toISOString(),
+              schema_version: "v1",
+              count: projects.length,
+              projects,
+            };
+            fs.writeFileSync("index/index.json", JSON.stringify(out, null, 2));
+            console.log("Wrote index/index.json with", projects.length, "projects");
+          '
+
+      - name: Commit index
+        run: |
+          git config user.name 'dash-bot'
+          git config user.email 'dash-bot@users.noreply.github.com'
+          if [ -n "$(git status --porcelain index/)" ]; then
+            git add index/
+            git commit -m 'chore: rebuild search index'
+            git push
+          else
+            echo 'No index changes to commit.'
+          fi

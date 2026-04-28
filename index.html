@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DASH Repository - GitHub-only build</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, Calibri, sans-serif; background: #F5F0E8; color: #2D2926; min-height: 100vh; }
+    .red-bar { height: 4px; background: #C63B1E; }
+    .top-bar { background: #FAF8F5; border-bottom: 1px solid #E5E1DB; padding: 0 32px; height: 56px; display: flex; align-items: center; gap: 12px; }
+    .top-bar-title { font-family: Georgia, serif; font-size: 17px; color: #2D2926; margin: 0; font-weight: normal; }
+    .top-bar-title strong { color: #C63B1E; }
+    .divider { width: 1px; height: 20px; background: #E5E1DB; }
+    .top-bar-sub { font-size: 12px; color: #6B6560; }
+    .role-chip { margin-left: auto; background: #E8D5B5; color: #2D2926; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .tab-nav { background: #FAF8F5; border-bottom: 1px solid #E5E1DB; padding: 0 32px; display: flex; }
+    .tab { padding: 12px 18px; font-size: 13px; font-weight: 500; color: #6B6560; cursor: pointer; border-bottom: 2px solid transparent; user-select: none; transition: color 0.15s; }
+    .tab:hover { color: #2D2926; }
+    .tab.active { color: #C63B1E; border-bottom-color: #C63B1E; }
+    .content { padding: 28px 32px; max-width: 1200px; margin: 0 auto; }
+
+    /* Browse */
+    .search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+    .search-input { flex: 1; padding: 10px 16px; border: 1px solid #E5E1DB; border-radius: 6px; background: #FAF8F5; font-size: 14px; color: #2D2926; font-family: inherit; outline: none; }
+    .search-input:focus { border-color: #C63B1E; }
+    .search-input::placeholder { color: #6B6560; }
+    .filter-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .filter-label { font-size: 12px; color: #6B6560; font-weight: 500; }
+    .filter-select { padding: 5px 10px; border: 1px solid #E5E1DB; border-radius: 5px; background: #FAF8F5; font-size: 12px; color: #2D2926; font-family: inherit; cursor: pointer; outline: none; }
+    .results-meta { font-size: 13px; color: #6B6560; margin-bottom: 16px; }
+    .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+    .project-card { background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .card-top { display: flex; align-items: flex-start; gap: 10px; }
+    .ref-badge { background: #C63B1E; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; margin-top: 3px; flex-shrink: 0; }
+    .card-title { font-family: Georgia, serif; font-size: 15px; line-height: 1.4; color: #2D2926; }
+    .card-meta { display: flex; gap: 16px; font-size: 12px; color: #6B6560; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+    .tag-mod { background: #E8D5B5; color: #5C4020; }
+    .tag-method { background: #E6EFDF; color: #3D5E31; }
+    .tag-disease { background: #EDE8E0; color: #5C4A30; }
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-complete { background: #E6EFDF; color: #567D46; }
+    .status-complete .status-dot { background: #567D46; }
+    .status-active { background: #FEF3E2; color: #C4972A; }
+    .status-active .status-dot { background: #C4972A; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid #E5E1DB; margin-top: auto; }
+    .analyst-label { font-size: 12px; color: #6B6560; }
+    .github-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #2D2926; color: white; border: none; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit; text-decoration: none; }
+    .github-btn:hover { background: #1a1714; }
+
+    /* Agent */
+    .agent-layout { display: grid; grid-template-columns: 1fr 260px; gap: 20px; height: calc(100vh - 200px); }
+    .chat-panel { display: flex; flex-direction: column; background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 8px; overflow: hidden; }
+    .chat-topbar { padding: 14px 20px; border-bottom: 1px solid #E5E1DB; display: flex; align-items: center; gap: 8px; }
+    .online-dot { width: 8px; height: 8px; background: #567D46; border-radius: 50%; }
+    .chat-topbar-name { font-size: 14px; font-weight: 500; }
+    .chat-topbar-sub { font-size: 12px; color: #6B6560; margin-left: auto; }
+    .messages-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+    .msg { display: flex; flex-direction: column; }
+    .msg-user { align-items: flex-end; }
+    .msg-agent { align-items: flex-start; }
+    .msg-label { font-size: 11px; color: #6B6560; margin-bottom: 5px; font-weight: 500; }
+    .bubble { padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.5; max-width: 85%; }
+    .bubble-user { background: #C63B1E; color: white; border-radius: 8px 8px 2px 8px; }
+    .bubble-agent { background: #F5F0E8; border: 1px solid #E5E1DB; color: #2D2926; border-radius: 2px 8px 8px 8px; }
+    .result-cards { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 580px; }
+    .mini-card { background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 6px; padding: 14px; }
+    .mini-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .mini-ref { background: #C63B1E; color: white; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+    .mini-title { font-size: 13px; font-weight: 500; color: #2D2926; line-height: 1.3; }
+    .mini-meta { font-size: 12px; color: #6B6560; margin-bottom: 6px; }
+    .mini-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+    .mini-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid #E5E1DB; }
+    .report-link { font-size: 12px; color: #C63B1E; font-weight: 500; background: none; border: none; cursor: pointer; font-family: inherit; padding: 0; }
+    .access-restrict { font-size: 12px; color: #6B6560; background: #FAF8F5; border: 1px solid #E5E1DB; border-left: 3px solid #C4972A; border-radius: 5px; padding: 8px 12px; }
+    .input-row { padding: 14px 20px; border-top: 1px solid #E5E1DB; display: flex; gap: 10px; }
+    .chat-input { flex: 1; padding: 10px 14px; border: 1px solid #E5E1DB; border-radius: 6px; background: #F5F0E8; font-size: 14px; color: #2D2926; font-family: inherit; outline: none; }
+    .chat-input:focus { border-color: #C63B1E; }
+    .send-btn { padding: 10px 18px; background: #C63B1E; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
+    .send-btn:hover { background: #a8321a; }
+    .agent-sidebar { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+    .sidebar-card { background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 8px; padding: 16px; }
+    .sidebar-title { font-size: 11px; font-weight: 600; color: #C63B1E; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .sidebar-item { font-size: 12px; color: #6B6560; padding: 5px 0; border-bottom: 1px solid #E5E1DB; line-height: 1.4; }
+    .sidebar-item:last-child { border-bottom: none; }
+    .sidebar-item strong { color: #2D2926; }
+
+    /* Schema */
+    .schema-layout { display: grid; grid-template-columns: 230px 1fr; gap: 20px; }
+    .schema-sidebar-box { background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 8px; padding: 16px; }
+    .schema-sidebar-h { font-family: Georgia, serif; font-size: 14px; margin-bottom: 14px; }
+    .schema-group { margin-bottom: 16px; }
+    .schema-group-h { font-size: 11px; font-weight: 600; color: #C63B1E; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .schema-field { font-size: 12px; color: #6B6560; padding: 3px 0 3px 8px; border-left: 2px solid #E5E1DB; margin-bottom: 2px; }
+    .schema-field.new { border-left-color: #C63B1E; color: #2D2926; font-weight: 500; }
+    .new-badge { display: inline-block; background: #C63B1E; color: white; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 5px; vertical-align: middle; }
+    .json-block { background: #1e1c1a; border-radius: 8px; padding: 24px; overflow: auto; max-height: calc(100vh - 220px); font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 12.5px; line-height: 1.75; color: #E8D5B5; }
+    .jk { color: #C4972A; }
+    .jn { color: #7FB3D3; }
+    .jc { color: #5A6B5A; font-style: italic; }
+
+    /* Flow */
+    .flow-wrap { max-width: 760px; margin: 0 auto; }
+    .flow-head { font-family: Georgia, serif; font-size: 22px; margin-bottom: 6px; }
+    .flow-subhead { font-size: 14px; color: #6B6560; margin-bottom: 32px; }
+    .step-list { display: flex; flex-direction: column; }
+    .step { display: flex; align-items: flex-start; gap: 16px; }
+    .step-spine { display: flex; flex-direction: column; align-items: center; width: 40px; flex-shrink: 0; }
+    .step-num { width: 36px; height: 36px; border-radius: 50%; background: #C63B1E; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+    .step-conn { width: 2px; background: #E5E1DB; flex: 1; min-height: 28px; margin: 3px 0; }
+    .step-body { flex: 1; background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 8px; padding: 16px 20px; margin-bottom: 4px; }
+    .step-title { font-weight: 600; font-size: 14px; margin-bottom: 5px; }
+    .step-desc { font-size: 13px; color: #6B6560; line-height: 1.5; }
+    .step-code { margin-top: 10px; background: #2D2926; color: #E8D5B5; padding: 10px 14px; border-radius: 5px; font-family: 'SF Mono', monospace; font-size: 12px; line-height: 1.6; white-space: pre; overflow-x: auto; }
+    .boundary { margin: 24px 0; border: 2px dashed #C63B1E; border-radius: 8px; padding: 18px 20px; background: #FEF8F6; }
+    .boundary-title { font-size: 11px; font-weight: 700; color: #C63B1E; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .boundary-items { display: flex; gap: 20px; flex-wrap: wrap; }
+    .boundary-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6B6560; }
+    .x-icon { color: #C63B1E; font-weight: 700; font-size: 14px; }
+
+    /* Role switcher */
+    .role-chip { position: relative; cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 6px; }
+    .role-chip:hover { background: #d9c49d; }
+    .role-chip-caret { font-size: 9px; opacity: 0.7; }
+    .role-menu { position: absolute; top: calc(100% + 6px); right: 0; background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.10); min-width: 240px; z-index: 300; overflow: hidden; }
+    .role-option { padding: 10px 14px; font-size: 13px; color: #2D2926; cursor: pointer; border-bottom: 1px solid #F5F0E8; }
+    .role-option:last-child { border-bottom: none; }
+    .role-option:hover { background: #F5F0E8; }
+    .role-option.active { background: #FEF3E2; color: #C63B1E; font-weight: 600; }
+    .role-option-sub { font-size: 11px; color: #6B6560; margin-top: 3px; font-weight: 400; }
+    .role-option.active .role-option-sub { color: #C4972A; }
+
+    /* Drawer (project detail) */
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(45,41,38,0.4); z-index: 200; display: flex; justify-content: flex-end; }
+    .drawer { background: #FAF8F5; width: 480px; max-width: 90vw; height: 100%; overflow-y: auto; display: flex; flex-direction: column; }
+    .drawer-head { padding: 18px 22px; border-bottom: 1px solid #E5E1DB; display: flex; align-items: center; gap: 10px; }
+    .drawer-close { margin-left: auto; background: none; border: none; font-size: 22px; cursor: pointer; color: #6B6560; line-height: 1; }
+    .drawer-body { padding: 20px 22px 28px; flex: 1; display: flex; flex-direction: column; gap: 18px; }
+    .drawer-section-h { font-size: 11px; font-weight: 600; color: #6B6560; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .drawer-title { font-family: Georgia, serif; font-size: 18px; line-height: 1.4; }
+    .drawer-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; }
+    .drawer-meta-grid > div > span { color: #6B6560; display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; font-weight: 500; }
+    .drawer-access { padding: 12px 14px; background: #FEF3E2; border: 1px solid #C4972A; border-radius: 6px; font-size: 12px; color: #2D2926; display: flex; align-items: flex-start; gap: 10px; line-height: 1.5; }
+    .drawer-link-out { background: #C63B1E; color: white; padding: 12px 16px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+    .drawer-link-out:hover { background: #a8321a; }
+    .drawer-note { font-size: 11px; color: #6B6560; text-align: center; line-height: 1.5; margin-top: 10px; }
+
+    /* Journey view */
+    .journey-wrap { max-width: 1100px; margin: 0 auto; }
+    .journey-head { font-family: Georgia, serif; font-size: 22px; margin-bottom: 6px; }
+    .journey-sub { font-size: 14px; color: #6B6560; line-height: 1.5; max-width: 720px; margin-bottom: 12px; }
+    .journey-path-toggle { display: inline-flex; background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 20px; padding: 3px; margin-bottom: 22px; }
+    .journey-path-btn { padding: 6px 16px; border: none; border-radius: 18px; background: none; font-size: 13px; cursor: pointer; color: #6B6560; font-family: inherit; font-weight: 500; }
+    .journey-path-btn.active { background: #C63B1E; color: white; }
+    .journey-steps { display: flex; gap: 0; margin-bottom: 22px; border-bottom: 1px solid #E5E1DB; }
+    .journey-step-pill { padding: 11px 16px; cursor: pointer; font-size: 13px; color: #6B6560; border-bottom: 3px solid transparent; user-select: none; display: flex; align-items: center; gap: 8px; }
+    .journey-step-pill:hover { color: #2D2926; }
+    .journey-step-pill.active { color: #C63B1E; border-bottom-color: #C63B1E; font-weight: 600; }
+    .journey-step-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #E5E1DB; color: #6B6560; font-size: 11px; font-weight: 700; }
+    .journey-step-pill.active .journey-step-num { background: #C63B1E; color: white; }
+    .journey-canvas { background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 10px; padding: 24px; min-height: 420px; display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
+    .journey-stage { display: flex; flex-direction: column; gap: 16px; }
+    .journey-stage > p { font-size: 14px; color: #2D2926; line-height: 1.55; }
+    .journey-explainer { background: #F5F0E8; border-left: 3px solid #C63B1E; padding: 12px 14px; border-radius: 5px; font-size: 12.5px; color: #2D2926; line-height: 1.55; }
+    .journey-aside { display: flex; flex-direction: column; gap: 12px; }
+    .journey-aside-card { background: #F5F0E8; border: 1px solid #E5E1DB; border-radius: 6px; padding: 14px; }
+    .journey-aside-card h4 { font-size: 11px; font-weight: 600; color: #C63B1E; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .journey-aside-card p { font-size: 12px; color: #2D2926; line-height: 1.5; margin-bottom: 8px; }
+    .journey-aside-card p:last-child { margin-bottom: 0; }
+    .journey-nav { display: flex; justify-content: space-between; margin-top: 18px; }
+    .journey-btn { padding: 9px 16px; border-radius: 6px; border: 1px solid #E5E1DB; background: #FAF8F5; cursor: pointer; font-size: 13px; font-family: inherit; color: #2D2926; }
+    .journey-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .journey-btn-primary { background: #C63B1E; color: white; border-color: #C63B1E; }
+    .journey-btn-primary:hover:not(:disabled) { background: #a8321a; }
+    .journey-code { background: #2D2926; color: #E8D5B5; padding: 16px; border-radius: 6px; font-size: 11.5px; line-height: 1.6; font-family: 'SF Mono', Consolas, monospace; overflow: auto; white-space: pre; }
+
+    /* Entry screen (journey step 1) */
+    .entry-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .entry-card { background: #F5F0E8; border: 2px solid #E5E1DB; border-radius: 10px; padding: 22px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .entry-card:hover { border-color: #C63B1E; }
+    .entry-card.active { border-color: #C63B1E; background: #FEF3E2; }
+    .entry-icon { width: 38px; height: 38px; border-radius: 9px; background: #C63B1E; color: white; display: flex; align-items: center; justify-content: center; font-size: 19px; margin-bottom: 12px; font-weight: 700; }
+    .entry-card h3 { font-family: Georgia, serif; font-size: 16px; margin-bottom: 6px; }
+    .entry-card p { font-size: 12.5px; color: #6B6560; line-height: 1.5; }
+
+    /* Clarifying bubble */
+    .bubble-clarify { background: #FFF2B0; border: 1px solid #C4972A; color: #2D2926; border-radius: 2px 8px 8px 8px; padding: 10px 14px; font-size: 14px; line-height: 1.5; max-width: 85%; }
+    .clarify-label { font-size: 10px; font-weight: 700; color: #C4972A; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .bubble-thinking { background: #F5F0E8; border: 1px dashed #C4972A; color: #6B6560; font-family: 'SF Mono', Consolas, monospace; font-size: 11px; line-height: 1.6; padding: 10px 14px; border-radius: 6px; max-width: 100%; }
+
+    /* RBAC indicator (browse) */
+    .rbac-indicator { background: #FEF3E2; border: 1px solid #C4972A; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #2D2926; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; line-height: 1.5; }
+    .rbac-lock { color: #C4972A; font-size: 14px; }
+
+    /* Clickable card */
+    .project-card.clickable { cursor: pointer; transition: border-color 0.15s, transform 0.05s; }
+    .project-card.clickable:hover { border-color: #C63B1E; }
+    .project-card.clickable:active { transform: translateY(1px); }
+    .mini-card-clickable { cursor: pointer; transition: border-color 0.15s; }
+    .mini-card-clickable:hover { border-color: #C63B1E; }
+
+    /* Audience switcher */
+    .audience-switcher { display: inline-flex; background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 18px; padding: 2px; margin-left: auto; }
+    .audience-btn { padding: 5px 12px; border-radius: 16px; font-size: 11px; font-weight: 500; color: #5A5450; background: none; border: none; cursor: pointer; font-family: inherit; letter-spacing: 0.02em; }
+    .audience-btn.active { background: #C63B1E; color: white; }
+    .audience-btn:not(.active):hover { color: #2D2926; }
+
+    /* Friendly-mode illustration */
+    .access-check { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; background: #FAF8F5; border: 1px solid #E5E1DB; border-radius: 8px; padding: 18px; }
+    .access-check-cell { background: #F5F0E8; border-radius: 6px; padding: 14px; }
+    .access-check-cell.highlight { background: #FEF3E2; border: 1px solid #C4972A; }
+    .access-check-cell strong { display: block; font-family: Georgia, serif; font-size: 14px; margin-bottom: 6px; }
+    .access-check-cell small { display: block; font-size: 12px; color: #5A5450; line-height: 1.5; }
+    .access-check-arrow { font-size: 22px; color: #C63B1E; }
+
+    /* ─── Accessibility ─── */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    .skip-link { position: absolute; top: -48px; left: 8px; background: #C63B1E; color: white; padding: 10px 14px; z-index: 999; font-size: 13px; font-weight: 600; text-decoration: none; border-radius: 0 0 6px 6px; }
+    .skip-link:focus { top: 0; }
+
+    /* Button resets so buttons can wear tab/chip/pill/card class styles */
+    button { font: inherit; color: inherit; background: none; border: none; padding: 0; margin: 0; cursor: pointer; }
+
+    /* Keyboard focus indicators (brand red) */
+    :focus { outline: none; }
+    :focus-visible { outline: 2px solid #C63B1E; outline-offset: 2px; border-radius: 3px; }
+    button.tab:focus-visible { outline-offset: -3px; border-radius: 0; }
+    button.role-option:focus-visible { outline-offset: -2px; border-radius: 0; }
+    button.journey-step-pill:focus-visible { outline-offset: -3px; border-radius: 0; }
+    .search-input:focus-visible, .chat-input:focus-visible, .filter-select:focus-visible { outline: 2px solid #C63B1E; outline-offset: 1px; }
+
+    /* Contrast bump for small muted text on lighter backgrounds */
+    .card-meta, .analyst-label, .drawer-note, .mini-meta { color: #5A5450; }
+    .clarify-label { color: #8C6A1B; }
+
+    /* Entry-card + chip + pill when rendered as <button> - reset alignment */
+    button.entry-card { display: block; width: 100%; text-align: left; }
+    button.role-chip { font-size: 12px; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+      .project-card.clickable:active, .entry-card:active { transform: none; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { useState, useRef, useEffect } = React;
+
+  // Projects are loaded from index/index.json at bootstrap (see end of script).
+  let PROJECTS = [];
+
+
+  // ─── Search utilities (simulates vector search with bag-of-words overlap) ───
+  const STOPWORDS = new Set([
+    'the','a','an','is','are','was','were','be','been','being','am',
+    'and','or','but','of','in','to','for','on','with','by','at','from','as',
+    'that','this','these','those','it','its','they','them','their',
+    'any','all','some','show','me','find','past','work','project','projects',
+    'what','which','who','how','why','when','where','used','using','use',
+    'about','did','do','does','done','have','has','had','can','could','would',
+    'please','you','your','we','our','my','mine','into','over','under','other'
+  ]);
+
+  const MODALITY_KEYWORDS = [
+    ['proteomics', 'proteomics'],
+    ['proteomic',  'proteomics'],
+    ['mass spectrometry', 'proteomics'],
+    ['mass-spec',  'proteomics'],
+    ['rna-seq',    'RNA-seq'],
+    ['rnaseq',     'RNA-seq'],
+    ['rna seq',    'RNA-seq'],
+    ['bulk rna',   'RNA-seq'],
+    ['transcriptomic', 'RNA-seq'],
+    ['transcriptomics','RNA-seq'],
+    ['single-cell','scRNA-seq'],
+    ['scrna',      'scRNA-seq'],
+    ['single cell','scRNA-seq'],
+    ['spatial',    'spatial transcriptomics'],
+    ['metabolomics','metabolomics'],
+    ['metabolomic','metabolomics'],
+    ['cytof',      'mass cytometry'],
+    ['mass cytometry','mass cytometry'],
+    ['flow cytometry','mass cytometry'],
+    ['imaging',    'imaging'],
+    ['mri',        'imaging'],
+    ['microbiome', 'microbiome'],
+    ['16s',        'microbiome'],
+    ['clinical',   'clinical'],
+  ];
+
+  const STATUS_KEYWORDS = [
+    ['completed', 'complete'], ['complete', 'complete'], ['finished','complete'],
+    ['active', 'active'], ['ongoing','active'], ['in progress','active'],
+  ];
+
+  function tokenize(text) {
+    return (text || '').toLowerCase()
+      .replace(/[^\w\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(t => t.length > 2 && !STOPWORDS.has(t));
+  }
+
+  function projectText(p) {
+    const pd = p.project_details || {};
+    const am = p.analytical_methods || {};
+    return [
+      p.title, p.findings?.executive_summary || '',
+      ...(pd.data_modality || []), ...(pd.disease || []),
+      ...(am.primary_methods || []), ...(am.tools_packages || []),
+    ].join(' ');
+  }
+
+  function scoreProject(p, queryTokens) {
+    if (queryTokens.length === 0) return 0;
+    const projTokens = new Set(tokenize(projectText(p)));
+    let hits = 0;
+    for (const q of queryTokens) {
+      if (projTokens.has(q)) hits += 1;
+      else {
+        // loose match: singular/plural/substring in any token
+        for (const pt of projTokens) {
+          if (pt.includes(q) || q.includes(pt)) { hits += 0.5; break; }
+        }
+      }
+    }
+    return hits / queryTokens.length;
+  }
+
+  function extractSignals(text) {
+    const lower = ' ' + (text || '').toLowerCase() + ' ';
+    const out = {};
+    for (const [kw, val] of MODALITY_KEYWORDS) {
+      if (lower.includes(' ' + kw) || lower.includes(kw + ' ')) { out.modality = val; break; }
+    }
+    for (const [kw, val] of STATUS_KEYWORDS) {
+      if (lower.includes(' ' + kw) || lower.includes(kw + ' ')) { out.status = val; break; }
+    }
+    return out;
+  }
+
+  function searchProjects(visible, fullQuery, context) {
+    let pool = visible;
+    if (context.modality) {
+      const m = context.modality.toLowerCase();
+      pool = pool.filter(p => p.project_details.data_modality.some(x => x.toLowerCase().includes(m)));
+    }
+    if (context.status) {
+      pool = pool.filter(p => p.status === context.status);
+    }
+    const tokens = tokenize(fullQuery);
+    const scored = pool.map(p => ({ p, s: scoreProject(p, tokens) }));
+    return scored
+      .filter(x => x.s > 0)
+      .sort((a, b) => b.s - a.s);
+  }
+
+  // Visibility tiers a role can discover. Tier vocabulary matches schema_v1.
+  const ROLES = {
+    analyst:  { label: 'DASH Analyst',    visibility: ['private','dash_internal','dash_extended','cpc_engaged'], sub: 'sees all project visibility levels' },
+    hdr:      { label: 'HDR Student',     visibility: ['dash_extended','cpc_engaged'],                           sub: 'sees dash_extended + cpc_engaged' },
+    external: { label: 'CPC Researcher',  visibility: ['cpc_engaged'],                                           sub: 'sees cpc_engaged only' },
+    director: { label: 'DASH Director',   visibility: ['private','dash_internal','dash_extended','cpc_engaged'], sub: 'sees everything (audit scope)' },
+  };
+  const FRIENDLY_ROLE_SUBS = {
+    analyst:  'DASH team member - sees every project',
+    hdr:      'Data-science student - sees shared projects',
+    external: 'CPC researcher - sees only centre-wide work',
+    director: 'DASH leadership - sees every project',
+  };
+  const FRIENDLY_VISIBILITY = {
+    private:        'lead analyst + CI only',
+    dash_internal:  'DASH team only',
+    dash_extended:  'DASH team + extended members',
+    cpc_engaged:    'shared centre-wide (CPC engaged)',
+  };
+  const visibleFor    = (role) => PROJECTS.filter(p => ROLES[role].visibility.includes(p.access.discovery));
+  const restrictedFor = (role) => PROJECTS.length - visibleFor(role).length;
+
+  const ModeContext = React.createContext('friendly');
+  const useMode = () => React.useContext(ModeContext);
+
+  const Tag = ({ text, type }) => <span className={`tag tag-${type}`}>{text}</span>;
+
+  const StatusPill = ({ status }) => (
+    <span className={`status-pill status-${status}`}>
+      <span className="status-dot" aria-hidden="true" />
+      <span className="sr-only">Status: </span>{status}
+    </span>
+  );
+
+  const GithubIcon = () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+    </svg>
+  );
+
+  const ProjectCard = ({ project, onClick }) => {
+    const handleKey = (e) => {
+      if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        onClick();
+      }
+    };
+    const interactive = onClick ? {
+      role: 'button',
+      tabIndex: 0,
+      onClick,
+      onKeyDown: handleKey,
+      'aria-label': `Open details for ${project.title}`,
+    } : {};
+    const pd = project.project_details;
+    const am = project.analytical_methods;
+    return (
+      <div className={`project-card${onClick ? ' clickable' : ''}`} {...interactive}>
+        <div className="card-top">
+          <span className="ref-badge" aria-label={`Reference ${project.ref_number}`}>REF-{project.ref_number}</span>
+          <span className="card-title">{project.title}</span>
+        </div>
+        <div className="card-meta">
+          <span>{pd.sample_info.n_samples} samples</span>
+          <span>{am.programming_languages.join(', ')}</span>
+          <span>{project.investigators.supervisor}</span>
+        </div>
+        <div className="tag-row">
+          {pd.data_modality.map(m => <Tag key={m} text={m} type="mod" />)}
+          {pd.disease.map(d => <Tag key={d} text={d} type="disease" />)}
+        </div>
+        <div className="tag-row">
+          {am.primary_methods.map(m => <Tag key={m} text={m} type="method" />)}
+        </div>
+        <div className="card-footer">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <StatusPill status={project.status} />
+            <span className="analyst-label">{project.investigators.lead_analyst}</span>
+          </div>
+          <a className="github-btn" href="#" onClick={e => e.stopPropagation()}
+             aria-label={`View ${project.title} on GitHub`}>
+            <GithubIcon /> GitHub
+          </a>
+        </div>
+      </div>
+    );
+  };
+
+  const BrowseView = ({ role, onSelectProject }) => {
+    const [search, setSearch] = useState('');
+    const [modFilter, setModFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const mode = useMode();
+
+    const visible = visibleFor(role);
+    const hidden  = restrictedFor(role);
+
+    const filtered = visible.filter(p => {
+      const q = search.toLowerCase();
+      const matchSearch = !q ||
+        p.title.toLowerCase().includes(q) ||
+        p.project_details.disease.some(d => d.toLowerCase().includes(q)) ||
+        p.analytical_methods.primary_methods.some(m => m.toLowerCase().includes(q)) ||
+        p.analytical_methods.tools_packages.some(t => t.toLowerCase().includes(q));
+      const matchMod = modFilter === 'all' || p.project_details.data_modality.includes(modFilter);
+      const matchStatus = statusFilter === 'all' || p.status === statusFilter;
+      return matchSearch && matchMod && matchStatus;
+    });
+
+    return (
+      <div className="content">
+        <div className="search-bar">
+          <label htmlFor="browse-search" className="sr-only">Search projects</label>
+          <input id="browse-search" type="search" className="search-input"
+                 placeholder="Search by title, disease, method, tool..."
+                 value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <div className="filter-row">
+          <label htmlFor="browse-modality" className="filter-label">Modality</label>
+          <select id="browse-modality" className="filter-select" value={modFilter} onChange={e => setModFilter(e.target.value)}>
+            <option value="all">All</option>
+            <option value="proteomics">Proteomics</option>
+            <option value="RNA-seq">RNA-seq</option>
+            <option value="spatial transcriptomics">Spatial transcriptomics</option>
+            <option value="metabolomics">Metabolomics</option>
+          </select>
+          <label htmlFor="browse-status" className="filter-label">Status</label>
+          <select id="browse-status" className="filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <option value="all">All</option>
+            <option value="complete">Complete</option>
+            <option value="active">Active</option>
+          </select>
+        </div>
+        {hidden > 0 && (
+          <div className="rbac-indicator" role="note">
+            <span className="rbac-lock" aria-hidden="true">●</span>
+            {mode === 'friendly' ? (
+              <span><strong>{hidden}</strong> other {hidden === 1 ? 'project isn\'t' : 'projects aren\'t'} shared with your role (<strong>{ROLES[role].label}</strong>). You only see work you\'ve been given access to.</span>
+            ) : (
+              <span><strong>{hidden}</strong> {hidden === 1 ? 'project is' : 'projects are'} hidden from your view - restricted by project visibility under your current role (<strong>{ROLES[role].label}</strong>). RBAC is applied at query time.</span>
+            )}
+          </div>
+        )}
+        <p className="results-meta" aria-live="polite">Showing {filtered.length} of {visible.length} visible projects</p>
+        <div className="project-grid" role="list">
+          {filtered.map(p => (
+            <div role="listitem" key={p.ref_number}>
+              <ProjectCard project={p} onClick={() => onSelectProject(p)} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const MiniCard = ({ project, onClick }) => {
+    const handleKey = (e) => {
+      if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        onClick();
+      }
+    };
+    const interactive = onClick ? {
+      role: 'button',
+      tabIndex: 0,
+      onClick,
+      onKeyDown: handleKey,
+      'aria-label': `Open details for ${project.title}`,
+    } : {};
+    const pd = project.project_details;
+    const am = project.analytical_methods;
+    return (
+      <div className={`mini-card${onClick ? ' mini-card-clickable' : ''}`} {...interactive}>
+        <div className="mini-card-head">
+          <span className="mini-ref" aria-label={`Reference ${project.ref_number}`}>REF-{project.ref_number}</span>
+          <span className="mini-title">{project.title}</span>
+        </div>
+        <div className="mini-meta">{project.investigators.lead_analyst} · {pd.sample_info.n_samples} samples · {am.programming_languages.join(', ')}</div>
+        <div className="mini-tags">
+          {pd.data_modality.map(m => <Tag key={m} text={m} type="mod" />)}
+          {am.primary_methods.slice(0, 2).map(m => <Tag key={m} text={m} type="method" />)}
+        </div>
+        <div className="mini-foot">
+          <StatusPill status={project.status} />
+          <span className="report-link" aria-hidden="true">Open details →</span>
+        </div>
+      </div>
+    );
+  };
+
+  const SAMPLE_QUERIES = [
+    'find proteomics work on inflammatory skin conditions',
+    'show me RNA-seq projects in metabolic disease',
+    'what projects used Seurat?',
+    'any imaging work on neurodegenerative disease?',
+    'microbiome studies',
+  ];
+
+  const greetingConvo = (mode, role) => ([
+    {
+      role: 'agent', type: 'text',
+      text: mode === 'friendly'
+        ? `Hi - I help you find past DASH work. Ask in your own words (or try one of the suggestions on the right). You're viewing as ${ROLES[role].label}.`
+        : `Agent online. Viewing as ${ROLES[role].label}. RBAC filter active: access.visibility ∈ [${ROLES[role].visibility.join(', ')}].`,
+    },
+  ]);
+
+  const AgentView = ({ role, onSelectProject }) => {
+    const [input, setInput] = useState('');
+    const mode = useMode();
+    const [messages, setMessages] = useState(() => greetingConvo(mode, role));
+    const [context, setContext] = useState({});
+    const [pendingQuestion, setPendingQuestion] = useState(null); // 'modality' | 'status' | null
+    const [busy, setBusy] = useState(false);
+    const messagesRef = useRef(null);
+    const hidden = restrictedFor(role);
+
+    // Reset greeting when role/mode changes meaningfully
+    useEffect(() => {
+      setMessages(greetingConvo(mode, role));
+      setContext({});
+      setPendingQuestion(null);
+    }, [mode, role]);
+
+    useEffect(() => {
+      messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: 'smooth' });
+    }, [messages]);
+
+    const visible = visibleFor(role);
+
+    const formatThinking = (q, ctx) => {
+      const rolesStr = ROLES[role].visibility.map(v => `"${v}"`).join(', ');
+      if (mode === 'friendly') {
+        const bits = [];
+        if (ctx.modality) bits.push(ctx.modality);
+        if (ctx.status)   bits.push(ctx.status + ' studies');
+        const scope = bits.length ? ' - ' + bits.join(', ') : '';
+        return `Searching past projects for "${q}"${scope}, filtered to what you can see as ${ROLES[role].label}.`;
+      }
+      const filters = [];
+      if (ctx.modality) filters.push(`data_modality: "${ctx.modality}"`);
+      if (ctx.status)   filters.push(`status: "${ctx.status}"`);
+      return `Query: "${q}" · filters { ${filters.join(', ') || '-'} } · RBAC gate access.visibility ∈ [${rolesStr}]`;
+    };
+
+    const runSearch = (query, newContext) => {
+      const ranked = searchProjects(visible, query, newContext);
+      const top    = ranked.slice(0, 5).map(r => r.p);
+      const candidatesAll = searchProjects(PROJECTS, query, newContext);
+      const restricted = candidatesAll.length - ranked.length;
+      return { top, restricted, total: ranked.length };
+    };
+
+    const handleSubmit = (rawText) => {
+      const text = (rawText || '').trim();
+      if (!text || busy) return;
+      setInput('');
+      setBusy(true);
+
+      const userMsg = { role: 'user', type: 'text', text };
+      const signals = extractSignals(text);
+      const newContext = { ...context, ...signals };
+
+      // Handle answering a pending clarifying question
+      if (pendingQuestion === 'modality' && !signals.modality) {
+        // Treat the whole reply as a modality hint
+        const m = MODALITY_KEYWORDS.find(([kw]) => text.toLowerCase().includes(kw));
+        if (m) newContext.modality = m[1];
+      }
+      if (pendingQuestion === 'status' && !signals.status) {
+        const s = STATUS_KEYWORDS.find(([kw]) => text.toLowerCase().includes(kw));
+        if (s) newContext.status = s[1];
+      }
+
+      setContext(newContext);
+      setMessages(m => [...m, userMsg]);
+
+      // Decide: clarify or search
+      const directHasModality = Boolean(newContext.modality);
+      const directHasTool     = /\b(seurat|limma|edger|dep|cytof|fgsea|spotlight|mixomics|diablo|caret|phyloseq|monocle|lme4)\b/i.test(text);
+      const directHasDisease  = /\b(skin|inflammation|diabetes|metabolic|cancer|tumour|tumor|autoimmune|cardiovascular|neurodegenerative|microbiome|endocrine|bowel)\b/i.test(text);
+      const askedClarifyBefore = Boolean(pendingQuestion);
+
+      const shouldSearch = directHasModality || directHasTool || askedClarifyBefore ||
+                           (directHasDisease && (newContext.status || text.length > 30));
+
+      setTimeout(() => {
+        if (!shouldSearch) {
+          setMessages(m => [...m, {
+            role: 'agent', type: 'clarify',
+            text: 'Any specific data type - proteomics, RNA-seq, single-cell, spatial, metabolomics, imaging, or microbiome?',
+          }]);
+          setPendingQuestion('modality');
+          setBusy(false);
+          return;
+        }
+
+        // Emit thinking + results
+        setMessages(m => [...m, { role: 'agent', type: 'thinking', text: formatThinking(text, newContext) }]);
+        setTimeout(() => {
+          const { top, restricted, total } = runSearch(text, newContext);
+          let intro;
+          if (top.length === 0) {
+            intro = mode === 'friendly'
+              ? `I couldn't find any matching projects. Try adding a data type (like proteomics) or a disease area.`
+              : `0 results for query "${text}". Consider adding a data_modality or disease filter.`;
+          } else {
+            intro = mode === 'friendly'
+              ? `Found ${total} matching project${total === 1 ? '' : 's'} you have access to${top.length < total ? ` (top ${top.length} shown)` : ''}:`
+              : `${total} result${total === 1 ? '' : 's'}${top.length < total ? ` (top ${top.length} shown)` : ''}:`;
+          }
+          setMessages(m => [...m, {
+            role: 'agent', type: 'results',
+            intro, projects: top, restricted,
+          }]);
+          setPendingQuestion(null);
+          setBusy(false);
+        }, 500);
+      }, 350);
+    };
+
+    const resetConvo = () => {
+      setMessages(greetingConvo(mode, role));
+      setContext({});
+      setPendingQuestion(null);
+      setInput('');
+    };
+    return (
+      <div className="content">
+        <div className="agent-layout">
+          <section className="chat-panel" aria-label="Agent conversation">
+            <div className="chat-topbar">
+              <span className="online-dot" aria-hidden="true" />
+              <span className="chat-topbar-name">DASH Repository Agent</span>
+              <span className="chat-topbar-sub">
+                {mode === 'friendly' ? 'Live demo · helps you find past DASH work' : 'Live demo · local retrieval · RBAC-filtered'}
+              </span>
+              <button type="button" onClick={resetConvo}
+                      style={{ marginLeft: 'auto', fontSize: 11, color: '#5A5450', padding: '4px 10px', border: '1px solid #E5E1DB', borderRadius: 4 }}>
+                Reset
+              </button>
+            </div>
+            <div ref={messagesRef} className="messages-area" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation history">
+              {messages.map((msg, i) => (
+                <div key={i} className={`msg msg-${msg.role}`}>
+                  <span className="msg-label">{msg.role === 'user' ? 'You' : 'Agent'}</span>
+                  {msg.type === 'results' && (
+                    <div className="result-cards">
+                      <div className="bubble bubble-agent" style={{ maxWidth: '100%' }}>{msg.intro}</div>
+                      {msg.projects.map(p => (
+                        <MiniCard key={p.ref_number} project={p} onClick={() => onSelectProject(p)} />
+                      ))}
+                      {msg.restricted > 0 && (
+                        <div className="access-restrict" role="note">
+                          {msg.restricted} additional result{msg.restricted > 1 ? 's are' : ' is'} restricted for your role ({ROLES[role].label}).
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {msg.type === 'clarify' && (
+                    <div>
+                      <div className="clarify-label">Clarifying question</div>
+                      <div className="bubble-clarify">{msg.text}</div>
+                    </div>
+                  )}
+                  {msg.type === 'thinking' && <div className="bubble-thinking" aria-label="Agent query plan">{msg.text}</div>}
+                  {msg.type === 'text' && <div className={`bubble bubble-${msg.role}`}>{msg.text}</div>}
+                </div>
+              ))}
+              {busy && <div className="msg msg-agent"><span className="msg-label">Agent</span><div className="bubble bubble-agent" style={{ opacity: 0.7 }}>…</div></div>}
+            </div>
+            <form className="input-row" onSubmit={e => { e.preventDefault(); handleSubmit(input); }}>
+              <label htmlFor="agent-input" className="sr-only">Message the agent</label>
+              <input id="agent-input" className="chat-input"
+                     placeholder="Ask in your own words…"
+                     value={input} onChange={e => setInput(e.target.value)}
+                     disabled={busy}
+                     autoFocus />
+              <button type="submit" className="send-btn" disabled={busy || !input.trim()}>Send</button>
+            </form>
+          </section>
+          <aside className="agent-sidebar" aria-label="Agent information">
+            <div className="sidebar-card">
+              <div className="sidebar-title">Your access</div>
+              <div className="sidebar-item"><strong>Role:</strong> {ROLES[role].label}</div>
+              <div className="sidebar-item">
+                <strong>Can see:</strong>{' '}
+                {mode === 'friendly'
+                  ? ROLES[role].visibility.map(v => FRIENDLY_VISIBILITY[v]).join('; ')
+                  : ROLES[role].visibility.join(', ')}
+              </div>
+              <div className="sidebar-item"><strong>Hidden:</strong> {hidden} {hidden === 1 ? 'project' : 'projects'}</div>
+            </div>
+            {mode === 'friendly' ? (
+              <div className="sidebar-card">
+                <div className="sidebar-title">How this agent helps</div>
+                <div className="sidebar-item">Finds past projects that match your question</div>
+                <div className="sidebar-item">Shows links so you can open the full report</div>
+                <div className="sidebar-item">Respects each project's sharing rules</div>
+                <div className="sidebar-item">Doesn't read the reports itself - that's your call</div>
+              </div>
+            ) : (
+              <div className="sidebar-card">
+                <div className="sidebar-title">Agent constraints</div>
+                <div className="sidebar-item">Queries metadata only (not report content)</div>
+                <div className="sidebar-item">Bag-of-words ranking over summaries + tags</div>
+                <div className="sidebar-item">Role filter applied before ranking</div>
+                <div className="sidebar-item">No network calls - runs in-browser</div>
+              </div>
+            )}
+            <div className="sidebar-card">
+              <div className="sidebar-title">Try these queries</div>
+              {SAMPLE_QUERIES.map(q => (
+                <button key={q} type="button"
+                        onClick={() => handleSubmit(q)}
+                        disabled={busy}
+                        className="sidebar-item"
+                        style={{ display: 'block', width: '100%', textAlign: 'left',
+                                 cursor: busy ? 'default' : 'pointer', color: busy ? '#9A9490' : '#2D2926' }}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  };
+
+  // Illustrative document mirroring project A01 - fictional data only.
+  const SCHEMA_DOC = `{
+  "ref_number": "A01",
+  "title": "Proteomic profiling of a chronic inflammatory skin condition",
+  "status": "complete",
+  "created_at": "2026-01-15T09:00:00Z",
+  "completed_at": "2026-04-20T16:00:00Z",
+  "updated_at": "2026-04-20T16:00:00Z",
+
+  "investigators": {
+    "chief_investigator": "Prof. Helena Vasquez",
+    "lead_analyst": "Dr. Maya Tanaka",
+    "supervisor": "Prof. Helena Vasquez"
+  },
+
+  "project_details": {
+    "research_area": ["dermatology", "immunology"],
+    "disease": ["inflammatory skin condition"],
+    "data_modality": ["proteomics", "mass spectrometry"],
+    "sample_info": {
+      "sample_type": "skin biopsy",
+      "n_samples": 48,
+      "organism": "human"
+    }
+  },
+
+  "analytical_methods": {
+    "primary_methods": ["differential expression", "pathway analysis"],
+    "tools_packages": ["limma", "DEP", "clusterProfiler"],
+    "programming_languages": ["R"],
+    "framework": "Quarto"
+  },
+
+  "findings": {
+    "executive_summary": "Mass-spectrometry proteomics on skin biopsies to identify proteins differentially expressed in an inflammatory skin condition. Differential-expression testing followed by pathway enrichment."
+  },
+
+  "outputs": {
+    "github_repo": "https://github.com/CPC-DASH/ref-A01",
+    "report_url": "https://cpc-dash.github.io/ref-A01/",
+    "report_layout": "single"
+    // Agent surfaces these links only - report content is never fetched
+  },
+
+  "governance": {
+    "indigenous_health": false,
+    "ethics_required": true
+  },
+
+  "tags": {
+    "asana_tags": ["proteomics"],
+    "method_tags": ["differential-expression", "pathway-analysis"]
+  },
+
+  "access": {                             // Four-dimensional, tiered access control
+    "preset": "shared",
+    "discovery": "dash_extended",
+    "summary": "dash_extended",
+    "report_link": "dash_extended",
+    "code_link": "dash_extended",
+    "owner": { "ci_name": "Prof. Helena Vasquez", "lead_analyst": "Dr. Maya Tanaka" }
+  },
+
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "vector": "[1536 floats - omitted]",
+    "source_text": "{title} | {findings.executive_summary} | Methods: differential expression, pathway analysis | Data: proteomics, mass spectrometry | Disease: inflammatory skin condition | Tools: limma, DEP, clusterProfiler"
+    // Computed from JSON fields only - no GitHub content fetched
+  }
+}`;
+
+  const SchemaView = () => {
+    function highlight(raw) {
+      return raw.split('\n').map(line => {
+        const ci = line.indexOf('//');
+        const code = ci >= 0 ? line.slice(0, ci) : line;
+        const comment = ci >= 0
+          ? `<span class="jc">${line.slice(ci)}</span>`
+          : '';
+        const hl = code
+          .replace(/"([a-zA-Z_][a-zA-Z0-9_]*)"\s*:/g, (m, k) => `"<span class="jk">${k}</span>":`)
+          .replace(/(:\s*)(\d+)/g, (m, pre, n) => `${pre}<span class="jn">${n}</span>`);
+        return hl + comment;
+      }).join('\n');
+    }
+
+    return (
+      <div className="content">
+        <div className="schema-layout">
+          <div className="schema-sidebar-box">
+            <div className="schema-sidebar-h">Document fields</div>
+            <div className="schema-group">
+              <div className="schema-group-h">Identity</div>
+              <div className="schema-field">ref_number</div>
+              <div className="schema-field">title</div>
+              <div className="schema-field">status</div>
+              <div className="schema-field">created_at / updated_at</div>
+            </div>
+            <div className="schema-group">
+              <div className="schema-group-h">Project details</div>
+              <div className="schema-field new">summary.background <span className="new-badge">revised</span></div>
+              <div className="schema-field new">summary.approach</div>
+              <div className="schema-field new">summary.outcome</div>
+              <div className="schema-field">disease</div>
+              <div className="schema-field">data_modality</div>
+              <div className="schema-field">sample_info</div>
+            </div>
+            <div className="schema-group">
+              <div className="schema-group-h">Methods</div>
+              <div className="schema-field">primary_methods</div>
+              <div className="schema-field">tools_packages</div>
+              <div className="schema-field">programming_languages</div>
+            </div>
+            <div className="schema-group">
+              <div className="schema-group-h">Tags</div>
+              <div className="schema-field">asana_tags</div>
+              <div className="schema-field">method_tags</div>
+            </div>
+            <div className="schema-group">
+              <div className="schema-group-h">Outputs</div>
+              <div className="schema-field">github_repo</div>
+              <div className="schema-field">report_url</div>
+            </div>
+            <div className="schema-group">
+              <div className="schema-group-h">Access</div>
+              <div className="schema-field new">access.visibility <span className="new-badge">new</span></div>
+              <div className="schema-field new">access.owner</div>
+              <div className="schema-field new">access.approved_roles</div>
+            </div>
+            <div className="schema-group">
+              <div className="schema-group-h">Embedding</div>
+              <div className="schema-field">model</div>
+              <div className="schema-field">vector [1536d]</div>
+              <div className="schema-field new">source_text <span className="new-badge">spec'd</span></div>
+            </div>
+          </div>
+          <pre className="json-block" dangerouslySetInnerHTML={{ __html: highlight(SCHEMA_DOC) }} />
+        </div>
+      </div>
+    );
+  };
+
+  const STEPS = [
+    {
+      title: 'User submits a natural language query',
+      desc: 'Researcher types a query in the UX interface. No exact keywords required.',
+      code: '"find proteomics projects for inflammatory skin conditions"',
+    },
+    {
+      title: 'Query is embedded',
+      desc: 'The query string is sent to the OpenAI embeddings API to generate a 1536-dimension vector.',
+      code: 'POST api.openai.com/v1/embeddings\n{ "model": "text-embedding-3-small", "input": "..." }',
+    },
+    {
+      title: 'MongoDB vector search + role filter',
+      desc: "The vector is used in an Atlas Vector Search query. The user's role is applied as a pre-filter - only documents visible to the user are searched.",
+      code: '{\n  "$vectorSearch": {\n    "queryVector": [...],\n    "filter": {\n      "access.discovery": { "$in": ["dash_extended", "cpc_engaged"] }\n    },\n    "limit": 5\n  }\n}',
+    },
+    {
+      title: 'Ranked metadata returned',
+      desc: 'MongoDB returns the top-k matching project documents ranked by cosine similarity. Metadata only - no report content.',
+      code: '[\n  { ref_number: "A01", title: "...", score: 0.91, ... },\n  { ref_number: "A06", title: "...", score: 0.84, ... }\n]',
+    },
+    {
+      title: 'UI renders result cards',
+      desc: 'The interface displays project cards with metadata, tags, and GitHub links. The agent presents the link - it does not fetch or display report content.',
+      code: null,
+    },
+  ];
+
+  const FlowView = () => (
+    <div className="content">
+      <div className="flow-wrap">
+        <h2 className="flow-head">Agent query architecture</h2>
+        <p className="flow-subhead">How a natural language query flows from the researcher to retrieved results.</p>
+        <div className="step-list">
+          {STEPS.map((step, i) => (
+            <div key={i} className="step">
+              <div className="step-spine">
+                <div className="step-num">{i + 1}</div>
+                {i < STEPS.length - 1 && <div className="step-conn" />}
+              </div>
+              <div className="step-body">
+                <div className="step-title">{step.title}</div>
+                <div className="step-desc">{step.desc}</div>
+                {step.code && <pre className="step-code">{step.code}</pre>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="boundary">
+          <div className="boundary-title">Agent boundary - never accessed</div>
+          <div className="boundary-items">
+            <div className="boundary-item"><span className="x-icon">✕</span> Report content (Quarto HTML)</div>
+            <div className="boundary-item"><span className="x-icon">✕</span> Code files in the GitHub repo</div>
+            <div className="boundary-item"><span className="x-icon">✕</span> Raw or processed data</div>
+            <div className="boundary-item"><span className="x-icon">✕</span> GitHub API calls at query time</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const AudienceSwitcher = ({ mode, onChange }) => (
+    <div className="audience-switcher" role="group" aria-label="Audience mode">
+      <button type="button"
+              className={`audience-btn${mode === 'friendly' ? ' active' : ''}`}
+              aria-pressed={mode === 'friendly'}
+              onClick={() => onChange('friendly')}>
+        For researchers
+      </button>
+      <button type="button"
+              className={`audience-btn${mode === 'technical' ? ' active' : ''}`}
+              aria-pressed={mode === 'technical'}
+              onClick={() => onChange('technical')}>
+        Technical
+      </button>
+    </div>
+  );
+
+  const RoleSwitcher = ({ role, onChange }) => {
+    const [open, setOpen] = useState(false);
+    const chipRef = useRef(null);
+    const menuRef = useRef(null);
+    const mode = useMode();
+    const subFor = (key) => mode === 'friendly' ? FRIENDLY_ROLE_SUBS[key] : ROLES[key].sub;
+
+    useEffect(() => {
+      if (!open) return;
+      const onKey = (e) => {
+        if (e.key === 'Escape') { setOpen(false); chipRef.current?.focus(); }
+      };
+      const onClickOutside = (e) => {
+        if (!chipRef.current?.contains(e.target) && !menuRef.current?.contains(e.target)) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener('keydown', onKey);
+      document.addEventListener('mousedown', onClickOutside);
+      return () => {
+        document.removeEventListener('keydown', onKey);
+        document.removeEventListener('mousedown', onClickOutside);
+      };
+    }, [open]);
+
+    return (
+      <div style={{ marginLeft: 12, position: 'relative' }}>
+        <button
+          ref={chipRef}
+          className="role-chip"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={`Viewing as ${ROLES[role].label}. Change role.`}
+          onClick={() => setOpen(!open)}>
+          {ROLES[role].label}
+          <span className="role-chip-caret" aria-hidden="true">▾</span>
+        </button>
+        {open && (
+          <div ref={menuRef} className="role-menu" role="menu" aria-label="Choose role">
+            {Object.entries(ROLES).map(([key, def]) => (
+              <button key={key}
+                role="menuitemradio"
+                aria-checked={key === role}
+                className={`role-option${key === role ? ' active' : ''}`}
+                onClick={() => { onChange(key); setOpen(false); chipRef.current?.focus(); }}>
+                {def.label}
+                <div className="role-option-sub">{subFor(key)}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const ProjectDrawer = ({ project, role, onClose }) => {
+    const closeBtnRef = useRef(null);
+    const prevFocusRef = useRef(null);
+    const mode = useMode();
+
+    useEffect(() => {
+      if (!project) return;
+      prevFocusRef.current = document.activeElement;
+      closeBtnRef.current?.focus();
+      const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+      document.addEventListener('keydown', onKey);
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.removeEventListener('keydown', onKey);
+        document.body.style.overflow = prevOverflow;
+        prevFocusRef.current?.focus?.();
+      };
+    }, [project]);
+
+    if (!project) return null;
+    const pd = project.project_details;
+    const am = project.analytical_methods;
+    const discoveryTier = project.access.discovery;
+    const canAccess = ROLES[role].visibility.includes(discoveryTier);
+    return (
+      <div className="drawer-backdrop" onClick={onClose}>
+        <div className="drawer"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="drawer-title"
+             onClick={e => e.stopPropagation()}>
+          <div className="drawer-head">
+            <span className="ref-badge" aria-label={`Reference ${project.ref_number}`}>REF-{project.ref_number}</span>
+            <StatusPill status={project.status} />
+            <button ref={closeBtnRef} className="drawer-close" onClick={onClose} aria-label="Close project details">×</button>
+          </div>
+          <div className="drawer-body">
+            <h2 id="drawer-title" className="drawer-title">{project.title}</h2>
+            <div>
+              <div className="drawer-section-h">Metadata</div>
+              <div className="drawer-meta-grid">
+                <div><span>Lead analyst</span>{project.investigators.lead_analyst}</div>
+                <div><span>Supervisor</span>{project.investigators.supervisor}</div>
+                <div><span>Samples</span>{pd.sample_info.n_samples}</div>
+                <div><span>Languages</span>{am.programming_languages.join(', ')}</div>
+              </div>
+            </div>
+            <div>
+              <div className="drawer-section-h">Modality &amp; disease</div>
+              <div className="tag-row">
+                {pd.data_modality.map(m => <Tag key={m} text={m} type="mod" />)}
+                {pd.disease.map(d => <Tag key={d} text={d} type="disease" />)}
+              </div>
+            </div>
+            <div>
+              <div className="drawer-section-h">Methods</div>
+              <div className="tag-row">
+                {am.primary_methods.map(m => <Tag key={m} text={m} type="method" />)}
+              </div>
+              <div style={{ fontSize: 12, color: '#6B6560', marginTop: 8 }}>
+                <strong style={{ color: '#2D2926' }}>Tools:</strong> {am.tools_packages.join(', ')}
+              </div>
+            </div>
+            <div className="drawer-access">
+              <span className="rbac-lock" aria-hidden="true">●</span>
+              <div>
+                <strong>
+                  {mode === 'friendly'
+                    ? `Sharing: ${FRIENDLY_VISIBILITY[discoveryTier]}`
+                    : `Visibility: ${discoveryTier}`}
+                </strong><br/>
+                {mode === 'friendly'
+                  ? (canAccess
+                      ? `You can open this report as a ${ROLES[role].label}. Whether you can read the full content depends on the collaborator's GitHub settings.`
+                      : 'This project isn\'t shared with your role. You normally wouldn\'t see this drawer.')
+                  : (canAccess
+                      ? `Under your role (${ROLES[role].label}) this project is accessible. Content access on GitHub depends on the collaborator's permissions there.`
+                      : 'Restricted for your current role. You should not normally see this drawer - switching to a role without access would hide the card.')}
+              </div>
+            </div>
+            <div>
+              <div className="drawer-section-h">Report</div>
+              <button className="drawer-link-out"
+                      onClick={() => window.open(project.outputs.report_url, '_blank', 'noopener,noreferrer')}>
+                <GithubIcon /> Open report in a new tab →
+              </button>
+              <div className="drawer-note">
+                {mode === 'friendly'
+                  ? 'The report opens in a new tab. This repository points to it - it doesn\'t copy or re-host the work.'
+                  : 'Content is hosted on GitHub Pages. Your browser fetches it directly - the agent and backend never load report content.'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const JOURNEY_STEPS_BY_MODE = {
+    friendly: [
+      { id: 'entry',   label: 'Start' },
+      { id: 'engage',  label: 'Search' },
+      { id: 'query',   label: 'Access check' },
+      { id: 'results', label: 'Results' },
+      { id: 'linkout', label: 'Open report' },
+    ],
+    technical: [
+      { id: 'entry',   label: 'Entry' },
+      { id: 'engage',  label: 'Engage' },
+      { id: 'query',   label: 'Query + RBAC' },
+      { id: 'results', label: 'Results' },
+      { id: 'linkout', label: 'Link out' },
+    ],
+  };
+
+  const journeyWhyCopy = ({ step, mode }) => {
+    if (mode === 'friendly') {
+      if (step === 'entry')   return "The repository isn't a free-browse catalogue. You ask the agent what you're looking for, and it returns only what's relevant and shareable with you.";
+      if (step === 'engage')  return "The agent asks follow-ups to narrow down instead of guessing. That means fewer irrelevant results - and the researcher stays in the driver's seat.";
+      if (step === 'query')   return 'Before showing anything, the repository checks what your role is allowed to see. Collaborators stay in control of their own work.';
+      if (step === 'results') return "Only projects relevant to the question are surfaced. If matching work exists that isn't shared with your role, you see a count - not the projects themselves.";
+      if (step === 'linkout') return "The report opens in a new tab. The repository is a directory - it doesn't copy or re-host anyone's work.";
+      return '';
+    }
+    if (step === 'entry')   return 'No free-browse surface. The agent is the sole user-facing interface; it decides what to return based on the question and the user\'s role.';
+    if (step === 'engage')  return 'Clarifying questions cut hallucination risk and produce tighter queries. The agent must not guess when ambiguity is cheap to resolve.';
+    if (step === 'query')   return 'RBAC at query time is what distinguishes this from handing Claude direct read access. It is the answer to "why not just use Claude".';
+    if (step === 'results') return 'Results are scoped to the question. We never dump the catalogue; relevance ranking + role filter decide what appears.';
+    if (step === 'linkout') return "Content access inherits from the collaborator's GitHub permissions. We do not replicate or re-host report content.";
+    return '';
+  };
+
+  const JourneyView = ({ role, onSelectProject }) => {
+    const [stepIdx, setStepIdx] = useState(0);
+    const mode = useMode();
+    const JOURNEY_STEPS = JOURNEY_STEPS_BY_MODE[mode];
+    const step = JOURNEY_STEPS[stepIdx].id;
+    const visible = visibleFor(role);
+    const hidden  = restrictedFor(role);
+    const rolesJson = JSON.stringify(ROLES[role].visibility);
+
+    return (
+      <div className="content">
+        <div className="journey-wrap">
+          <h2 className="journey-head">
+            {mode === 'friendly' ? 'How researchers will use this' : 'Researcher journey walkthrough'}
+          </h2>
+          <p className="journey-sub">
+            {mode === 'friendly'
+              ? "A preview of how researchers will find past DASH work. There's no free-browse catalogue - researchers ask the agent, and it decides what's relevant to the question (then checks access before showing anything). Switch the role in the top right to see access change the results."
+              : 'Step through the flow. The agent is the sole user-facing surface; no free-browse. Every query runs through role-based access filtering before results are ranked and returned.'}
+          </p>
+
+          <nav className="journey-steps" aria-label="Journey steps" style={{ marginTop: 18 }}>
+            {JOURNEY_STEPS.map((s, i) => (
+              <button key={s.id}
+                className={`journey-step-pill${i === stepIdx ? ' active' : ''}`}
+                aria-current={i === stepIdx ? 'step' : undefined}
+                onClick={() => setStepIdx(i)}>
+                <span className="journey-step-num" aria-hidden="true">{i + 1}</span>
+                <span className="sr-only">Step {i + 1}: </span>{s.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="journey-canvas">
+            <div className="journey-stage">
+              {step === 'entry' && (
+                <React.Fragment>
+                  <p>A researcher arrives with a question in mind. The repository doesn't show a catalogue to scroll - they ask the agent, and the agent decides what to surface based on the question.</p>
+                  <div style={{ background: '#F5F0E8', border: '1px solid #E5E1DB', borderRadius: 10, padding: 26, display: 'flex', gap: 20, alignItems: 'center' }}>
+                    <div style={{ width: 52, height: 52, background: '#C63B1E', color: 'white', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, flexShrink: 0 }} aria-hidden="true">✦</div>
+                    <div>
+                      <div style={{ fontFamily: 'Georgia, serif', fontSize: 18, marginBottom: 6 }}>Ask the agent</div>
+                      <div style={{ fontSize: 13, color: '#5A5450', lineHeight: 1.55 }}>Describe what you're trying to do in your own words. The agent follows up with clarifying questions if it needs more, then returns only the projects relevant to the question - and only the ones your role is allowed to see.</div>
+                    </div>
+                  </div>
+                  <div className="journey-explainer">
+                    {mode === 'friendly'
+                      ? 'No free-browse surface. This is a deliberate choice - researchers don\'t get to scroll a list of every past project. They get what matches their question, subject to access.'
+                      : <React.Fragment>The agent is the sole user-facing interface. No browse-all surface is exposed. Agent responses are driven by relevance to the query + RBAC, never a full-catalogue dump.</React.Fragment>}
+                  </div>
+                </React.Fragment>
+              )}
+
+              {step === 'engage' && (
+                <React.Fragment>
+                  <p>Researcher describes their need in natural language. The agent iterates with clarifying questions until the query is scoped.</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div className="msg msg-user"><div className="bubble bubble-user">find past work on inflammatory skin conditions</div></div>
+                    <div className="msg msg-agent">
+                      <div className="clarify-label">Clarifying question</div>
+                      <div className="bubble-clarify">Got it. Any specific data modality - proteomics, transcriptomics, imaging?</div>
+                    </div>
+                    <div className="msg msg-user"><div className="bubble bubble-user">proteomics</div></div>
+                    <div className="msg msg-agent">
+                      <div className="clarify-label">Clarifying question</div>
+                      <div className="bubble-clarify">Only completed studies, or include active ones too?</div>
+                    </div>
+                    <div className="msg msg-user"><div className="bubble bubble-user">completed</div></div>
+                  </div>
+                  <div className="journey-explainer">
+                    {mode === 'friendly'
+                      ? "The follow-ups stop once the agent has enough to search. It only points you to past projects - it doesn't open the reports itself."
+                      : 'The loop terminates when the agent has enough to build a scoped MongoDB query. It never fetches report or code content from GitHub.'}
+                  </div>
+                </React.Fragment>
+              )}
+
+              {step === 'query' && mode === 'friendly' && (
+                <React.Fragment>
+                  <p>Before any results appear, the repository checks which projects your role is allowed to see. This happens automatically, every time.</p>
+                  <div className="access-check">
+                    <div className="access-check-cell">
+                      <strong>You</strong>
+                      <small>Role: {ROLES[role].label}</small>
+                      <small>Can see: {ROLES[role].visibility.map(v => FRIENDLY_VISIBILITY[v]).join('; ')}</small>
+                    </div>
+                    <div className="access-check-arrow" aria-hidden="true">→</div>
+                    <div className="access-check-cell highlight">
+                      <strong>You'll see</strong>
+                      <small>{visible.length} of {PROJECTS.length} projects in the repository</small>
+                      {hidden > 0 && <small>{hidden} other {hidden === 1 ? 'project isn\'t' : 'projects aren\'t'} shared with your role</small>}
+                    </div>
+                  </div>
+                  <div className="journey-explainer">
+                    <strong>Why this matters:</strong> collaborators stay in control of their work. Projects that haven't been shared with your role simply don't appear in the agent's results - there's no teaser and no &ldquo;restricted&rdquo; placeholder to click into.
+                  </div>
+                </React.Fragment>
+              )}
+
+              {step === 'query' && mode === 'technical' && (
+                <React.Fragment>
+                  <p>The query runs against MongoDB. The RBAC filter is applied <strong>at query time</strong>, not after - never trust the client or a post-filter.</p>
+                  <pre className="journey-code">{`db.projects.aggregate([
+  {
+    $vectorSearch: {
+      index: "projects_vector",
+      path: "embedding.vector",
+      queryVector: [... 1536 floats ...],
+      numCandidates: 50,
+      limit: 10,
+      filter: {
+        // RBAC gate - pre-filter, never post-filter
+        "access.visibility": { $in: ${rolesJson} },
+        // + structured filters from the UI / clarifying loop
+        "project_details.data_modality": "proteomics",
+        "status": "complete"
+      }
+    }
+  }
+])`}</pre>
+                  <div className="journey-explainer">
+                    Current role: <strong>{ROLES[role].label}</strong> - visibility ∈ {ROLES[role].visibility.join(', ')}. Change the role in the top-right chip to see the query and downstream results change.
+                  </div>
+                </React.Fragment>
+              )}
+
+              {step === 'results' && (
+                <React.Fragment>
+                  <p>MongoDB returns project metadata only - what the current role is allowed to see. Activate any card (Enter or Space) to preview the detail drawer.</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }} role="list">
+                    {visible.slice(0, 4).map(p => (
+                      <div role="listitem" key={p.ref_number}>
+                        <MiniCard project={p} onClick={() => onSelectProject(p)} />
+                      </div>
+                    ))}
+                  </div>
+                  {hidden > 0 && (
+                    <div className="access-restrict" role="note">{hidden} additional {hidden === 1 ? 'project is' : 'projects are'} hidden from your view under role <strong>{ROLES[role].label}</strong>.</div>
+                  )}
+                  <div className="journey-explainer">
+                    {mode === 'friendly'
+                      ? 'Each card is a summary - authors, tags, and a link to the full report. To read the report itself, click through to open it.'
+                      : <React.Fragment>Cards are built entirely from MongoDB JSON fields. No report content is loaded. Each card carries an <code>outputs.report_url</code> link.</React.Fragment>}
+                  </div>
+                </React.Fragment>
+              )}
+
+              {step === 'linkout' && visible.length > 0 && (
+                <React.Fragment>
+                  <p>Researcher selects a project. The UI surfaces metadata and a single call-to-action: open the report in a new tab. Content is served by the user's browser directly from GitHub Pages.</p>
+                  <div style={{ background: '#F5F0E8', border: '1px solid #E5E1DB', borderRadius: 8, padding: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                      <span className="ref-badge" aria-label={`Reference ${visible[0].ref}`}>REF-{visible[0].ref}</span>
+                      <StatusPill status={visible[0].status} />
+                    </div>
+                    <h3 style={{ fontFamily: 'Georgia, serif', fontSize: 16, marginBottom: 14, lineHeight: 1.4 }}>{visible[0].title}</h3>
+                    <button className="drawer-link-out" onClick={() => onSelectProject(visible[0])}>
+                      Preview drawer &amp; open report →
+                    </button>
+                  </div>
+                  <div className="journey-explainer">
+                    {mode === 'friendly'
+                      ? "Whether you can actually read the report depends on the collaborator's sharing settings on GitHub. The repository points you to the work; collaborators control the work itself."
+                      : 'The agent / backend never loads the report. Access to content is enforced by whatever permissions the collaborator has set on the GitHub repo / Pages site - not by our backend.'}
+                  </div>
+                </React.Fragment>
+              )}
+
+              {step === 'linkout' && visible.length === 0 && (
+                <div className="journey-explainer">Under the current role (<strong>{ROLES[role].label}</strong>) no projects are visible, so there is nothing to link out to. Switch roles in the top-right chip to continue the walkthrough.</div>
+              )}
+
+              <div className="journey-nav">
+                <button className="journey-btn" disabled={stepIdx === 0} onClick={() => setStepIdx(stepIdx - 1)}>← Previous</button>
+                <button className="journey-btn journey-btn-primary" disabled={stepIdx === JOURNEY_STEPS.length - 1} onClick={() => setStepIdx(stepIdx + 1)}>Next →</button>
+              </div>
+            </div>
+
+            <div className="journey-aside">
+              <div className="journey-aside-card">
+                <h4>Why this step matters</h4>
+                <p>{journeyWhyCopy({ step, mode })}</p>
+              </div>
+              <div className="journey-aside-card">
+                <h4>Viewing as</h4>
+                <p><strong>{ROLES[role].label}</strong> - {mode === 'friendly' ? FRIENDLY_ROLE_SUBS[role] : ROLES[role].sub}.</p>
+                <p style={{ color: '#5A5450' }}>{hidden} of {PROJECTS.length} projects not shared with this role.</p>
+              </div>
+              <div className="journey-aside-card">
+                <h4>Try</h4>
+                <p>
+                  {mode === 'friendly'
+                    ? <React.Fragment>Switch the role in the top right (try <em>CPC Researcher</em>) to see how access changes what gets shown.</React.Fragment>
+                    : <React.Fragment>Switch the role in the top-right chip (e.g. to <em>CPC Researcher</em>) to watch the RBAC gate change what the query returns.</React.Fragment>}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const TABS_BY_MODE = {
+    friendly:  ['Journey', 'Agent'],
+    technical: ['Journey', 'Agent', 'Schema', 'Architecture'],
+  };
+  const TAB_LABELS = {
+    friendly:  { Journey: 'How it works', Agent: 'Ask the agent',  Schema: 'Data fields',  Architecture: 'Query flow' },
+    technical: { Journey: 'Journey',      Agent: 'Agent',          Schema: 'Schema',       Architecture: 'Architecture' },
+  };
+  const tabId   = (t) => `tab-${t.toLowerCase()}`;
+  const panelId = (t) => `panel-${t.toLowerCase()}`;
+
+  const App = () => {
+    const [mode, setMode] = useState('friendly');
+    const [tab, setTab] = useState('Journey');
+    const [role, setRole] = useState('analyst');
+    const [drawerProject, setDrawerProject] = useState(null);
+    const [announcement, setAnnouncement] = useState('');
+    const tabRefs = useRef({});
+
+    const tabs = TABS_BY_MODE[mode];
+    const labels = TAB_LABELS[mode];
+
+    const changeRole = (newRole) => {
+      setRole(newRole);
+      setAnnouncement(`Role changed to ${ROLES[newRole].label}. ${restrictedFor(newRole)} of ${PROJECTS.length} projects hidden.`);
+    };
+
+    const changeMode = (newMode) => {
+      setMode(newMode);
+      if (!TABS_BY_MODE[newMode].includes(tab)) setTab('Journey');
+      setAnnouncement(newMode === 'friendly'
+        ? 'Switched to researcher view. Technical details are hidden.'
+        : 'Switched to technical view. Developer details are visible.');
+    };
+
+    const onTabKey = (e, idx) => {
+      const keys = { ArrowRight: 1, ArrowLeft: -1, Home: 'home', End: 'end' };
+      if (!(e.key in keys)) return;
+      e.preventDefault();
+      let next = idx;
+      if (keys[e.key] === 'home') next = 0;
+      else if (keys[e.key] === 'end') next = tabs.length - 1;
+      else next = (idx + keys[e.key] + tabs.length) % tabs.length;
+      setTab(tabs[next]);
+      setTimeout(() => tabRefs.current[tabs[next]]?.focus(), 0);
+    };
+
+    return (
+      <ModeContext.Provider value={mode}>
+        <div>
+          <a href="#main" className="skip-link">Skip to main content</a>
+          <div className="red-bar" aria-hidden="true" />
+          <header className="top-bar">
+            <h1 className="top-bar-title"><strong>DASH</strong> Repository</h1>
+            <div className="divider" aria-hidden="true" />
+            <span className="top-bar-sub">Charles Perkins Centre · Data Science Hub</span>
+            <AudienceSwitcher mode={mode} onChange={changeMode} />
+            <RoleSwitcher role={role} onChange={changeRole} />
+          </header>
+          <nav className="tab-nav" role="tablist" aria-label="Repository views">
+            {tabs.map((t, i) => (
+              <button key={t}
+                ref={el => { tabRefs.current[t] = el; }}
+                role="tab"
+                id={tabId(t)}
+                aria-selected={tab === t}
+                aria-controls={panelId(t)}
+                tabIndex={tab === t ? 0 : -1}
+                className={`tab${tab === t ? ' active' : ''}`}
+                onClick={() => setTab(t)}
+                onKeyDown={(e) => onTabKey(e, i)}>
+                {labels[t]}
+              </button>
+            ))}
+          </nav>
+          <main id="main">
+            <section role="tabpanel" id={panelId(tab)} aria-labelledby={tabId(tab)} tabIndex={-1}>
+              {tab === 'Journey'      && <JourneyView  role={role} onSelectProject={setDrawerProject} />}
+              {tab === 'Browse'       && <BrowseView   role={role} onSelectProject={setDrawerProject} />}
+              {tab === 'Agent'        && <AgentView    role={role} onSelectProject={setDrawerProject} />}
+              {tab === 'Schema'       && <SchemaView />}
+              {tab === 'Architecture' && <FlowView />}
+            </section>
+          </main>
+          <ProjectDrawer project={drawerProject} role={role} onClose={() => setDrawerProject(null)} />
+          <div className="sr-only" role="status" aria-live="polite">{announcement}</div>
+        </div>
+      </ModeContext.Provider>
+    );
+  };
+
+  // ─── Bootstrap: fetch the index, then render ───────────────────────
+  // In production index.json is built by .github/workflows/build-index.yml
+  // on each merge to main, and includes embeddings populated by embed.yml.
+  async function bootstrap() {
+    const root = document.getElementById('root');
+    try {
+      const res = await fetch('index/index.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      PROJECTS = data.projects;
+      ReactDOM.createRoot(root).render(<App />);
+    } catch (err) {
+      root.innerHTML = '<div style="padding:60px 32px;font-family:Georgia,serif;max-width:680px;margin:60px auto;background:#FAF8F5;border:1px solid #E5E1DB;border-radius:8px"><h1 style="color:#C63B1E;font-size:22px;margin-bottom:14px">Failed to load index</h1><p style="margin-bottom:14px"><code style="background:#F5F0E8;padding:2px 6px;border-radius:3px">' + err.message + '</code></p><p style="color:#6B6560;font-size:14px;line-height:1.6;margin-bottom:14px">If you opened this file directly, browsers block <code>fetch()</code> from the <code>file://</code> protocol. Start a local static server from the <code>option_a/</code> directory:</p><pre style="background:#2D2926;color:#FAF8F5;padding:14px 18px;border-radius:6px;font-size:13px;font-family:ui-monospace,Menlo,monospace">python3 -m http.server 8000</pre><p style="color:#6B6560;font-size:14px;line-height:1.6;margin-top:14px">then open <code>http://localhost:8000/</code>.</p></div>';
+    }
+  }
+  bootstrap();
+</script>
+</body>
+</html>

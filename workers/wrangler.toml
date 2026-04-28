@@ -1,0 +1,9 @@
+name = "dash-embed-query"
+main = "embed-query.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://cpc-dash.github.io"
+
+# Secrets (set via `wrangler secret put`):
+#   OPENAI_API_KEY

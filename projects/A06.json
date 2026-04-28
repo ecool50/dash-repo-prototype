@@ -1,0 +1,51 @@
+{
+  "ref_number": "A06",
+  "title": "Mass-cytometry immune profiling in an autoimmune condition",
+  "status": "complete",
+  "created_at": "2025-10-05T09:00:00Z",
+  "completed_at": "2026-03-08T16:00:00Z",
+  "updated_at": "2026-03-08T16:00:00Z",
+  "investigators": {
+    "chief_investigator": "Prof. Naomi Strickland",
+    "lead_analyst": "Dr. Aisha Okafor",
+    "supervisor": "Prof. Naomi Strickland"
+  },
+  "project_details": {
+    "research_area": ["immunology"],
+    "disease": ["autoimmune condition"],
+    "data_modality": ["mass cytometry", "CyTOF"],
+    "sample_info": { "sample_type": "PBMC", "n_samples": 64, "organism": "human" }
+  },
+  "analytical_methods": {
+    "primary_methods": ["clustering", "differential abundance"],
+    "tools_packages": ["CytoNorm", "FlowSOM", "diffcyt"],
+    "programming_languages": ["R"],
+    "framework": "Quarto"
+  },
+  "findings": {
+    "executive_summary": "High-dimensional flow and mass cytometry of peripheral immune cells in an autoimmune condition. Unsupervised clustering and differential-abundance testing."
+  },
+  "outputs": {
+    "github_repo": "https://github.com/CPC-DASH/ref-A06",
+    "report_url": "https://cpc-dash.github.io/ref-A06/",
+    "report_layout": "single"
+  },
+  "governance": { "indigenous_health": false, "ethics_required": true },
+  "tags": {
+    "asana_tags": ["cytometry", "immunology"],
+    "method_tags": ["clustering", "differential-abundance"]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_extended",
+    "summary": "dash_extended",
+    "report_link": "dash_extended",
+    "code_link": "dash_extended",
+    "owner": { "ci_name": "Prof. Naomi Strickland", "lead_analyst": "Dr. Aisha Okafor" }
+  },
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "vector": null,
+    "source_text": "Mass-cytometry immune profiling in an autoimmune condition | High-dimensional flow and mass cytometry of peripheral immune cells in an autoimmune condition. Unsupervised clustering and differential-abundance testing. | Methods: clustering, differential abundance | Data: mass cytometry, CyTOF | Disease: autoimmune condition | Tools: CytoNorm, FlowSOM, diffcyt"
+  }
+}

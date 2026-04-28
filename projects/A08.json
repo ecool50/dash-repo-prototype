@@ -1,0 +1,51 @@
+{
+  "ref_number": "A08",
+  "title": "Plasma metabolomics across a dietary-intervention trial",
+  "status": "complete",
+  "created_at": "2025-07-22T09:00:00Z",
+  "completed_at": "2026-03-18T16:00:00Z",
+  "updated_at": "2026-03-18T16:00:00Z",
+  "investigators": {
+    "chief_investigator": "Prof. Marcus Whitford",
+    "lead_analyst": "Dr. Liam Novak",
+    "supervisor": "Prof. Marcus Whitford"
+  },
+  "project_details": {
+    "research_area": ["nutrition"],
+    "disease": ["nutrition", "metabolic disease"],
+    "data_modality": ["metabolomics"],
+    "sample_info": { "sample_type": "plasma", "n_samples": 96, "organism": "human" }
+  },
+  "analytical_methods": {
+    "primary_methods": ["paired tests", "mixed-effects modelling", "pathway analysis"],
+    "tools_packages": ["xcms", "limma", "MetaboAnalystR"],
+    "programming_languages": ["R"],
+    "framework": "Quarto"
+  },
+  "findings": {
+    "executive_summary": "Untargeted plasma metabolomics before and after a dietary intervention. Paired tests and mixed-effects models, with pathway enrichment on hits."
+  },
+  "outputs": {
+    "github_repo": "https://github.com/CPC-DASH/ref-A08",
+    "report_url": "https://cpc-dash.github.io/ref-A08/",
+    "report_layout": "single"
+  },
+  "governance": { "indigenous_health": false, "ethics_required": true },
+  "tags": {
+    "asana_tags": ["metabolomics", "nutrition"],
+    "method_tags": ["paired-tests", "mixed-effects"]
+  },
+  "access": {
+    "preset": "published",
+    "discovery": "cpc_engaged",
+    "summary": "cpc_engaged",
+    "report_link": "cpc_engaged",
+    "code_link": "cpc_engaged",
+    "owner": { "ci_name": "Prof. Marcus Whitford", "lead_analyst": "Dr. Liam Novak" }
+  },
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "vector": null,
+    "source_text": "Plasma metabolomics across a dietary-intervention trial | Untargeted plasma metabolomics before and after a dietary intervention. Paired tests and mixed-effects models, with pathway enrichment on hits. | Methods: paired tests, mixed-effects modelling, pathway analysis | Data: metabolomics | Disease: nutrition, metabolic disease | Tools: xcms, limma, MetaboAnalystR"
+  }
+}

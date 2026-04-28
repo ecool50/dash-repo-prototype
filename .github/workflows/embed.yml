@@ -1,0 +1,61 @@
+name: Embed project records
+
+# Triggered on PRs that touch projects/*.json. For each changed file,
+# call the embedding service (via the Cloudflare Worker or directly) using
+# the source_text field, write the resulting vector back into the JSON,
+# and commit it to the PR branch.
+#
+# Required secrets:
+#   OPENAI_API_KEY       - or use the Worker URL below if you'd rather
+#                          keep the secret only at the edge.
+#   GITHUB_TOKEN         - provided automatically by Actions.
+
+on:
+  pull_request:
+    paths:
+      - 'projects/**.json'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  embed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Find changed project files
+        id: changed
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          files=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD -- 'projects/*.json')
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$files" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Validate against schema_v1.json
+        run: |
+          npm install --no-save ajv ajv-formats
+          node scripts/validate.mjs ${{ steps.changed.outputs.files }}
+
+      - name: Compute embeddings
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          node scripts/embed.mjs ${{ steps.changed.outputs.files }}
+
+      - name: Commit updated vectors
+        run: |
+          git config user.name 'dash-bot'
+          git config user.email 'dash-bot@users.noreply.github.com'
+          if [ -n "$(git status --porcelain projects/)" ]; then
+            git add projects/
+            git commit -m 'chore: refresh embeddings'
+            git push
+          else
+            echo 'No embedding changes to commit.'
+          fi
