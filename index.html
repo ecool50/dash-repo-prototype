@@ -263,8 +263,12 @@
   // Until then, agent search falls back to bag-of-words over source_text.
   const CONFIG = {
     WORKER_URL: 'https://dash-embed-query.ecool50.workers.dev',
-    SIMILARITY_FLOOR: 0.45,          // bge-large cosine sim is tighter than OpenAI's; 0.45 ~ "topical match"
-    TOP_K: 8,
+    // Relative cutoff: keep results within RELATIVE_GAP of the best match.
+    // Adapts per query - strict when the best match is strong, lenient when
+    // there's no clear winner. Combined with an absolute floor.
+    SIMILARITY_FLOOR: 0.50,          // absolute cosine sim floor
+    RELATIVE_GAP: 0.08,              // results must be within this of the best score
+    TOP_K: 5,
   };
 
   // Projects are loaded from index/index.json at bootstrap (see end of script).
@@ -396,13 +400,19 @@
   }
 
   function rankByVector(pool, queryVec, context) {
-    return pool
+    const scored = pool
       .map(p => {
         const sim = cosineSim(queryVec, p.embedding?.vector);
         return { p, s: sim + modalityBoost(p, context.modality), sim };
       })
       .filter(x => x.sim >= CONFIG.SIMILARITY_FLOOR)
       .sort((a, b) => b.s - a.s);
+
+    if (scored.length === 0) return scored;
+    // Relative cutoff: drop anything more than RELATIVE_GAP behind the best match.
+    const bestSim = scored[0].sim;
+    const cutoff = Math.max(CONFIG.SIMILARITY_FLOOR, bestSim - CONFIG.RELATIVE_GAP);
+    return scored.filter(x => x.sim >= cutoff);
   }
 
   function rankByTokens(pool, tokens, context) {
