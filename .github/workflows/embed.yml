@@ -1,13 +1,12 @@
 name: Embed project records
 
 # Triggered on PRs that touch projects/*.json. For each changed file,
-# call the embedding service (via the Cloudflare Worker or directly) using
-# the source_text field, write the resulting vector back into the JSON,
+# POST source_text to the Cloudflare Worker (which calls Workers AI
+# under the hood), write the returned vector back into the JSON,
 # and commit it to the PR branch.
 #
-# Required secrets:
-#   OPENAI_API_KEY       - or use the Worker URL below if you'd rather
-#                          keep the secret only at the edge.
+# Required vars/secrets:
+#   EMBED_URL            - the Worker URL (set as a repo variable, not secret).
 #   GITHUB_TOKEN         - provided automatically by Actions.
 
 on:
@@ -44,7 +43,7 @@ jobs:
 
       - name: Compute embeddings
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          EMBED_URL: ${{ vars.EMBED_URL || 'https://dash-embed-query.ecool50.workers.dev' }}
         run: |
           node scripts/embed.mjs ${{ steps.changed.outputs.files }}
 

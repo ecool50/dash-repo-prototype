@@ -3,7 +3,9 @@ main = "embed-query.js"
 compatibility_date = "2026-01-01"
 
 [vars]
-ALLOWED_ORIGIN = "https://cpc-dash.github.io"
+ALLOWED_ORIGIN = "https://ecool50.github.io"
 
-# Secrets (set via `wrangler secret put`):
-#   OPENAI_API_KEY
+# Cloudflare Workers AI binding — gives env.AI.run(...) inside the Worker.
+# No external API key required.
+[ai]
+binding = "AI"

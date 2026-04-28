@@ -1,23 +1,20 @@
 #!/usr/bin/env node
-// Compute embeddings for one or more project JSONs and write the vector
-// back into the embedding.vector field of each file.
+// Compute embeddings for one or more project JSONs via the deployed
+// Cloudflare Worker, then write the vector back into embedding.vector.
 //
 // Usage:
-//   OPENAI_API_KEY=sk-... node scripts/embed.mjs projects/A01.json [...]
+//   EMBED_URL=https://dash-embed-query.<sub>.workers.dev \
+//   node scripts/embed.mjs projects/A01.json [...]
 //
-// Skips files whose source_text hasn't changed since last embed (a hash
-// is stored alongside the vector in embedding._source_hash).
+// Skips files whose source_text hasn't changed since the last embed
+// (a hash is stored in embedding._source_hash). The Worker uses the
+// same model for both build-time and query-time embeddings, so vectors
+// are directly comparable.
 
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  console.error('OPENAI_API_KEY not set.');
-  process.exit(1);
-}
-
-const MODEL = 'text-embedding-3-small';
+const EMBED_URL = process.env.EMBED_URL || 'https://dash-embed-query.ecool50.workers.dev';
 const args = process.argv.slice(2).filter(a => a.endsWith('.json'));
 
 if (args.length === 0) {
@@ -26,20 +23,16 @@ if (args.length === 0) {
 }
 
 async function embed(input) {
-  const res = await fetch('https://api.openai.com/v1/embeddings', {
+  const res = await fetch(EMBED_URL, {
     method: 'POST',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ model: MODEL, input }),
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ query: input }),
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
-    throw new Error(`OpenAI ${res.status}: ${detail}`);
+    throw new Error(`Worker ${res.status}: ${detail}`);
   }
-  const body = await res.json();
-  return body.data[0].embedding;
+  return res.json();
 }
 
 function hash(text) {
@@ -60,8 +53,8 @@ for (const file of args) {
     continue;
   }
   console.log(`EMBED ${file}...`);
-  const vector = await embed(sourceText);
-  doc.embedding.model = MODEL;
+  const { model, vector } = await embed(sourceText);
+  doc.embedding.model = model;
   doc.embedding.vector = vector;
   doc.embedding._source_hash = h;
   doc.embedding._embedded_at = new Date().toISOString();
