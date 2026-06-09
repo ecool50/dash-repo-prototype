@@ -16,15 +16,21 @@ import { client, DB, COLL } from './mongo.js';
 
 const EMBED_MODEL = '@cf/baai/bge-large-en-v1.5';
 
-// Retrieval thresholds (ported from the option_a prototype after tuning):
+// Retrieval thresholds, tuned for bge-large-en-v1.5:
 //   SIMILARITY_FLOOR — absolute cosine-similarity floor. Below this the
-//     match is treated as noise. Tuned for bge-large-en-v1.5.
+//     match is treated as noise.
 //   RELATIVE_GAP — once the best result is known, drop anything more
 //     than this far behind it. Stops a single strong match from dragging
 //     in a tail of weak ones.
 //   OVERFETCH_FACTOR — how many extra candidates to pull from Atlas
 //     before filtering, so the floor and gap have something to work with.
-const SIMILARITY_FLOOR = 0.50;
+//
+// Calibration data (against the 10 illustrative projects, June 2026):
+//   Real-query top scores: 0.89 to 0.95
+//   Nonsense-query top scores: 0.76 to 0.80
+// Floor of 0.82 cleanly separates the two on the observed data. Re-tune
+// if the embedding model changes or the corpus shape shifts.
+const SIMILARITY_FLOOR = 0.82;
 const RELATIVE_GAP = 0.08;
 const OVERFETCH_FACTOR = 4;
 const MIN_OVERFETCH = 20;
