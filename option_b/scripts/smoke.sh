@@ -77,7 +77,8 @@ probe() {
     echo "PASS  [$status]  $label"
     if command -v jq >/dev/null 2>&1; then
       echo "$body" | jq -c '
-        if has("results") then "results: \(.results | length) project(s)"
+        if has("matches") then "matches: \(.matches | length), answer: \(.answer | .[0:80])"
+        elif has("results") then "results: \(.results | length) project(s)"
         elif has("vector") then "vector: \(.dimensions) dims, model=\(.model)"
         elif has("ref_number") then "ref=\(.ref_number) title=\(.title // "n/a")"
         else "ok"
@@ -107,6 +108,13 @@ probe "POST /api/query-embed" 200 \
 
 probe "POST /api/search (natural-language query)" 200 \
   curl -X POST "$BASE_URL/api/search" \
+    -H 'content-type: application/json' \
+    --data '{"query":"inflammatory skin proteomics","limit":3}'
+
+# ---- 2b. ask (frontend-facing wrapper) --------------------------------------
+
+probe "POST /api/ask (frontend wrapper)" 200 \
+  curl -X POST "$BASE_URL/api/ask" \
     -H 'content-type: application/json' \
     --data '{"query":"inflammatory skin proteomics","limit":3}'
 

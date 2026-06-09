@@ -3,6 +3,9 @@
 // Routes:
 //   POST /api/query-embed   text -> vector (Workers AI bge-large-en-v1.5)
 //   POST /api/search        { query, filters, limit } -> ranked projects
+//   POST /api/ask           { query, limit } -> { answer, matches }
+//                           Frontend-facing wrapper around search with a
+//                           short templated answer string.
 //   GET  /api/projects/:id  full project document
 //   POST /api/ingest        validate, embed, upsert (Bearer INGEST_SECRET)
 //
@@ -10,6 +13,7 @@
 
 import { searchProjects, getProject } from './search.js';
 import { ingestProject } from './ingest.js';
+import { askAgent } from './ask.js';
 
 const EMBED_MODEL = '@cf/baai/bge-large-en-v1.5';
 
@@ -31,6 +35,10 @@ export default {
       if (req.method === 'POST' && path === '/api/search') {
         const body = await req.json();
         return json(await searchProjects(body, env), 200, cors);
+      }
+      if (req.method === 'POST' && path === '/api/ask') {
+        const body = await req.json();
+        return json(await askAgent(body, env), 200, cors);
       }
       if (req.method === 'GET' && path.startsWith('/api/projects/')) {
         const id = decodeURIComponent(path.split('/').pop());
