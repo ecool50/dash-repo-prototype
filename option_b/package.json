@@ -1,0 +1,21 @@
+{
+  "name": "dash-option-b",
+  "version": "1.0.0",
+  "description": "MongoDB-backed mockup of the DASH repository (path 2: local Node API + Atlas).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "ingest": "node scripts/ingest.mjs projects/*.json",
+    "embed": "node scripts/embed.mjs projects/*.json",
+    "seed-acls": "node scripts/seed-acls.mjs projects/*.json",
+    "validate": "node scripts/validate.mjs projects/*.json",
+    "wrangler:deploy": "wrangler --config api/wrangler.toml deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.88.0"
+  },
+  "dependencies": {
+    "mongodb": "^7.2.0"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    { "key": { "ref_number": 1 }, "unique": true },
+    { "key": { "tags.asana_tags": 1 } },
+    { "key": { "tags.method_tags": 1 } },
+    { "key": { "project_details.data_modality": 1 } },
+    { "key": { "project_details.disease": 1 } },
+    { "key": { "status": 1 } },
+    { "key": { "updated_at": -1, "status": 1 } },
+    { "key": { "access.viewers": 1 } }
+  ]
+}

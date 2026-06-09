@@ -1,0 +1,41 @@
+name: Deploy Worker
+
+# Deploys the Cloudflare Worker (option_b/api/) when its code changes on main.
+#
+# Required repo secrets:
+#   CLOUDFLARE_API_TOKEN  Cloudflare API token with "Edit Cloudflare Workers" permission
+#   CLOUDFLARE_ACCOUNT_ID The Cloudflare account ID hosting this Worker
+#
+# The Worker's own secrets (ATLAS_URI, INGEST_SECRET) are set once via
+# `npx wrangler secret put <NAME>` and persist in Cloudflare, so this
+# workflow does not need them.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'option_b/api/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Worker dependencies
+        working-directory: option_b
+        run: npm ci
+
+      - name: Deploy with Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: option_b/api
+          command: deploy

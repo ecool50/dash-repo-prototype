@@ -1,0 +1,318 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\setlength{\headheight}{14pt}
+\usepackage[colorlinks=true,linkcolor=red!60!black,urlcolor=blue!60!black,citecolor=blue!60!black]{hyperref}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+
+\definecolor{usydred}{HTML}{C63B1E}
+\definecolor{ochre}{HTML}{C4972A}
+\definecolor{sandstone}{HTML}{E8D5B5}
+\definecolor{charcoal}{HTML}{2D2926}
+\definecolor{eucalypt}{HTML}{567D46}
+\definecolor{codebg}{HTML}{F5F0E8}
+\definecolor{mutedtext}{HTML}{6B6560}
+
+\titleformat{\section}{\Large\bfseries\color{usydred}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{charcoal}}{\thesubsection}{1em}{}
+
+\lstdefinestyle{code}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framesep=6pt,
+  rulecolor=\color{sandstone},
+  breaklines=true,
+  keywordstyle=\color{usydred},
+  commentstyle=\color{mutedtext}\itshape,
+  stringstyle=\color{ochre},
+  numbers=none,
+  showstringspaces=false,
+  upquote=true,
+}
+\lstset{style=code}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{mutedtext}{\small DASH Repository: MongoDB Implementation Primer}}
+\fancyhead[R]{\textcolor{mutedtext}{\small \thepage}}
+\renewcommand{\headrulewidth}{0pt}
+
+\title{\vspace{-2cm}\textcolor{usydred}{\rule{\textwidth}{4pt}}\\[1em]
+\Huge\bfseries MongoDB Implementation Primer\\[0.4em]
+\large\mdseries\color{mutedtext} Option B of the DASH Repository: how it works, what is stored, what each piece does}
+\author{Elijah Willie \\ \small Charles Perkins Centre, Data Science Hub \\ \small University of Sydney}
+\date{8 May 2026}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\vspace{1em}
+
+\begin{quote}
+\itshape\color{mutedtext}\small
+This document describes the MongoDB-backed implementation of the DASH Repository (\texttt{option\_b/}). It traces a query end-to-end, names every moving part by file, and explains the role of MongoDB Atlas in the architecture. It is intended for engineers, data scientists, and supervisors who want a concrete understanding of what is happening behind the demo, not a tutorial on MongoDB at large.
+\end{quote}
+
+\tableofcontents
+\vspace{1em}
+
+\section{Why this document exists}
+
+The DASH Repository's hybrid architecture, approved in April 2026, uses \emph{MongoDB Atlas} for metadata and retrieval, and \emph{GitHub} for analytical content. \texttt{option\_b/} is a working prototype of the MongoDB-backed half. This document explains the implementation precisely enough that a reader can: (i) reason about why the architecture was chosen, (ii) extend or modify it, and (iii) verify that the system does what it claims.
+
+The companion document \texttt{architecture-tradeoffs.md} answers \emph{why} we chose this architecture. This document answers \emph{how} it works.
+
+\section{The architecture in four pieces}
+
+The system is built from exactly four components. Three of them are short pieces of code; one (Atlas) is a managed service.
+
+\begin{tabularx}{\textwidth}{l X l}
+\toprule
+\textbf{Piece} & \textbf{Role} & \textbf{Where it lives} \\
+\midrule
+Browser (React) & Renders UI, sends API requests, attaches the demo-user header & \texttt{option\_b/index.html} \\
+Node dev server & HTTP listener; routes \texttt{/api/*} to handlers and \texttt{/} to static files & \texttt{option\_b/scripts/dev-server.mjs} \\
+MongoDB Atlas & Stores projects + search logs; runs vector and structured queries & \texttt{dash.projects}, \texttt{dash.search\_logs} \\
+Cloudflare Workers AI & Embeds query text $\to$ 1024-dimensional vector & \texttt{dash-embed-query.ecool50.workers.dev} \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+\noindent\textbf{What MongoDB is, and is not.} MongoDB Atlas is a managed document database. In our system it is purely a data layer: it stores documents, applies indexes, and runs query pipelines. It does not run application code, embed text, authenticate users, or render UI. The dev server orchestrates everything that requires logic; Atlas is the addressable storage and search engine the dev server talks to.
+
+\section{A short MongoDB primer (only what we need)}
+
+\subsection{The document model}
+
+A MongoDB \emph{document} is a JSON-like object stored in a \emph{collection}. Documents in a collection have flexible shape but typically share a schema in practice. Every project in our system is one document in the \texttt{projects} collection.
+
+\subsection{Indexes}
+
+Atlas supports several index kinds. We use three:
+
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item \textbf{Standard indexes} on scalar fields (\texttt{ref\_number}, \texttt{status}). Speed up exact-match and range queries.
+  \item \textbf{Multikey indexes} on array fields (\texttt{tags.method\_tags}, \texttt{access.viewers}). Speed up \texttt{\$in} membership tests.
+  \item \textbf{Vector search indexes} on dense float arrays (\texttt{embedding.vector}). Power \texttt{\$vectorSearch} approximate-nearest-neighbour queries with cosine similarity.
+\end{itemize}
+
+\subsection{The aggregation pipeline}
+
+Atlas queries are expressed as \emph{aggregation pipelines}: a sequence of stages, each transforming a stream of documents. We build one pipeline per request, with stages in this order: \texttt{\$vectorSearch} (find ANN matches with a filter applied), \texttt{\$set} (attach the similarity score), \texttt{\$project} (strip the embedding vector before the response leaves Atlas).
+
+\section{The data: collections, schema, indexes}
+
+\subsection{Collections}
+
+\begin{description}[leftmargin=1.5em,style=nextline]
+  \item[\texttt{dash.projects}] Ten documents at present. One per consultation project. Each document carries the structured metadata, the embedding vector, and the access-control list.
+  \item[\texttt{dash.search\_logs}] One document per \texttt{/api/search} call. Carries the query, the filters, the user identity, the result count, and a timestamp. This collection grows as the agent is used; it is the data source for the project specification's ``agent quality flywheel''.
+\end{description}
+
+\subsection{Project document shape (abbreviated)}
+
+\begin{lstlisting}
+{
+  "ref_number": "A05",
+  "title": "Spatial transcriptomics of...",
+  "status": "complete",
+  "investigators": { "lead_analyst": "...", ... },
+  "project_details": {
+    "summary": "...",
+    "data_modality": ["spatial transcriptomics"],
+    "disease": ["solid tumour"],
+    "sample_info": { "sample_type": "...", "n_samples": 24 }
+  },
+  "analytical_methods": {
+    "primary_methods": ["differential expression"],
+    "tools_packages": ["Seurat", "Giotto"],
+    "programming_languages": ["R"]
+  },
+  "tags": {
+    "asana_tags": ["spatial"],
+    "method_tags": ["differential-expression"]
+  },
+  "embedding": {
+    "model": "bge-large-en-v1.5",
+    "vector": [0.0123, -0.0451, ...],   // 1024 floats
+    "source_text": "..."                // text used to embed
+  },
+  "access": {
+    "preset": "tier",                   // public | tier | restricted
+    "viewers": ["tier:analyst", "tier:hdr"]
+  }
+}
+\end{lstlisting}
+
+\subsection{Indexes applied}
+
+Index specs live as JSON in \texttt{option\_b/atlas/}. They are applied once via the Atlas UI:
+
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item \texttt{ref\_number} (unique): enables idempotent upsert on ingest.
+  \item Multikey indexes on \texttt{tags.method\_tags}, \texttt{tags.asana\_tags}, \texttt{project\_details.data\_modality}, \texttt{project\_details.disease}, \texttt{access.viewers}, and \texttt{status}.
+  \item \texttt{projects\_vector}: vector search index, 1024 dimensions, cosine similarity. Filter fields declared inside the index spec so Atlas can apply structured filters during ANN search.
+\end{itemize}
+
+\section{End-to-end: tracing a single query}
+
+The clearest way to understand the system is to follow what happens when a user types a query. Suppose the user has selected the role \emph{HDR Student} and types \texttt{skin proteomics} in the Browse tab.
+
+\subsection*{Step 1: Browser}
+The React app calls \texttt{fetchProjects('hdr', 'skin proteomics')}. This issues:
+\begin{lstlisting}
+POST http://localhost:8787/api/search
+content-type: application/json
+x-demo-user: hdr
+
+{ "query": "skin proteomics", "filters": {}, "limit": 50 }
+\end{lstlisting}
+
+\subsection*{Step 2: Dev server: identify the user}
+\texttt{dev-server.mjs} reads the \texttt{x-demo-user} header and resolves it to a user object:
+\begin{lstlisting}
+{ id: "demo-hdr", tier: "hdr", roles: [] }
+\end{lstlisting}
+In production this step would verify a Bearer token through SSO. The demo trusts the header for clarity.
+
+\subsection*{Step 3: Embed the query}
+The dev server posts the query text to the Cloudflare Worker, which calls Workers AI (\texttt{bge-large-en-v1.5}) and returns a 1024-float vector. \emph{Atlas does not embed.} It only searches over embeddings produced elsewhere.
+
+\subsection*{Step 4: Build the filter}
+The dev server merges two filters into one:
+\begin{lstlisting}
+{
+  // structured filters (empty in this query - no chips selected)
+  // RBAC filter:
+  $or: [
+    { "access.preset": "public" },
+    { "access.viewers": { $in: ["user:demo-hdr", "tier:hdr"] } }
+  ]
+}
+\end{lstlisting}
+The structured filters and the RBAC clause are merged into a single object so Atlas can apply them together inside \texttt{\$vectorSearch}.
+
+\subsection*{Step 5: The MongoDB pipeline}
+The dev server submits this aggregation:
+\begin{lstlisting}
+[
+  { $vectorSearch: {
+      index: "projects_vector",
+      path: "embedding.vector",
+      queryVector: [...1024 floats...],
+      numCandidates: 100,
+      limit: 50,
+      filter: { $or: [...] }            // RBAC enforced inside ANN
+  }},
+  { $set: { score: { $meta: "vectorSearchScore" } } },
+  { $project: { "embedding.vector": 0 } }   // strip vector
+]
+\end{lstlisting}
+Atlas runs approximate-nearest-neighbour over \texttt{projects\_vector}, applies the filter \emph{during} ANN, and returns ranked documents. Documents the user cannot see are excluded inside the cluster, before the network response.
+
+\subsection*{Step 6: Log the query}
+A document is written to \texttt{search\_logs}: the query text, the filters, the user identity, the result count, the timestamp. This is fire-and-forget; it does not delay the response. This collection is later useful for understanding what users ask, what fails, and where retrieval can be improved.
+
+\subsection*{Step 7: Response}
+The dev server returns JSON to the browser. React renders the project cards, decorating each document with a derived \texttt{access.discovery} tier (mapped from \texttt{access.preset}) so the existing UI logic can display the access banner consistently.
+
+\section{RBAC at the database layer}
+
+The architectural property that distinguishes option B from option A is this: \emph{access control happens inside the database, before any data leaves it}. The mechanism is a single \texttt{\$or} clause merged into every read pipeline.
+
+\subsection{The ACL shape}
+
+Each project document carries:
+\begin{lstlisting}
+"access": {
+  "preset": "public" | "tier" | "restricted",
+  "viewers": ["user:elijah", "tier:hdr", "role:supervisor", ...]
+}
+\end{lstlisting}
+
+\subsection{The filter}
+
+For a user with identities $\{u_1, u_2, \ldots\}$, the filter is:
+\begin{lstlisting}
+{ $or: [
+  { "access.preset": "public" },
+  { "access.viewers": { $in: [u_1, u_2, ...] } }
+] }
+\end{lstlisting}
+
+A project is returned if either it is marked public \emph{or} the user shares an identity with one of its declared viewers.
+
+\subsection{Why this is non-trivial}
+
+In option A, all metadata is shipped to the browser as a JSON file. ``RBAC'' is a UI-level filter applied after the data has been delivered. A determined viewer can open the JSON and read every project. In option B, restricted documents do not leave the cluster. The access decision is made in the same atomic operation as the search itself, so there is no window in which the application server holds data the user is not authorised to see.
+
+\subsection{The demo mapping}
+
+For demonstration, the dev server exposes three identities via the \texttt{x-demo-user} header:
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item \texttt{analyst}: DASH analyst tier; sees all 10 projects.
+  \item \texttt{hdr}: HDR student tier; sees public + tier-shared projects (5).
+  \item \texttt{external}: unaffiliated researcher; sees public projects only (2).
+\end{itemize}
+The role switcher in the UI maps the chosen role to one of these identities and refetches \texttt{/api/search}, which makes the access-control decision visible end-to-end.
+
+\section{Operating the system}
+
+\subsection{Setting it up}
+
+Six steps, fully reproducible from \texttt{option\_b/docs/setup.md}:
+
+\begin{enumerate}[leftmargin=2em,itemsep=2pt]
+  \item Sign up for MongoDB Atlas and create a free M0 cluster.
+  \item Create database \texttt{dash}, collection \texttt{projects}, apply the vector index.
+  \item Put the connection string in \texttt{option\_b/.env}.
+  \item Run \texttt{npm run embed} (compute embeddings), \texttt{npm run seed-acls} (assign ACLs).
+  \item Run \texttt{npm run ingest} (upsert into Atlas).
+  \item Run \texttt{npm run dev} (start the dev server).
+\end{enumerate}
+
+\subsection{Inspecting it}
+
+The Atlas web UI is the canonical inspection tool:
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item \texttt{Browse Collections} $\to$ \texttt{dash.projects}: the 10 ingested documents, with embedding vectors visible.
+  \item \texttt{Browse Collections} $\to$ \texttt{dash.search\_logs}: the live query log, growing as the demo is used.
+\end{itemize}
+
+\subsection{Restarting after reboot}
+
+\begin{lstlisting}
+cd option_b
+set -a; source .env; set +a
+npm run dev
+\end{lstlisting}
+
+\section{Glossary}
+
+\begin{description}[style=nextline,leftmargin=2em]
+  \item[Aggregation pipeline] A sequence of MongoDB query stages that transform documents. Equivalent to a SQL query in expressiveness, but with a stage-by-stage shape.
+  \item[Approximate Nearest Neighbour (ANN)] A class of vector search algorithms that trade exactness for speed. Atlas \texttt{\$vectorSearch} uses HNSW.
+  \item[Cosine similarity] A measure of similarity between two vectors equal to the cosine of the angle between them. Standard for comparing dense text embeddings.
+  \item[Document-level RBAC] Access control where each document carries its own access list, enforced at query time. Distinguished from collection-level or database-level access control.
+  \item[Embedding] A dense vector representation of text, produced by a neural model. The vectors here are 1024-dimensional outputs from \texttt{bge-large-en-v1.5}.
+  \item[Multikey index] A MongoDB index over an array-valued field, enabling efficient membership tests.
+  \item[Upsert] An update operation that creates the document if it does not already exist. Used by the ingest script for idempotent reloading.
+\end{description}
+
+\vspace{2em}
+\noindent\textcolor{usydred}{\rule{\textwidth}{1pt}}
+
+\noindent\textit{\small See also: \texttt{option\_a/docs/architecture-tradeoffs.md} (why this architecture), \texttt{option\_b/docs/setup.md} (reproducible setup), \texttt{option\_b/docs/rbac-demo.md} (RBAC walkthrough), \texttt{option\_a/docs/exec-summary.md} (executive summary for supervisors).}
+
+\end{document}

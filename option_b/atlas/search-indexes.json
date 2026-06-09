@@ -1,0 +1,15 @@
+{
+  "name": "projects_text",
+  "type": "search",
+  "definition": {
+    "mappings": {
+      "dynamic": false,
+      "fields": {
+        "title": { "type": "string" },
+        "project_details.summary": { "type": "string" },
+        "tags.asana_tags": { "type": "string" },
+        "tags.method_tags": { "type": "string" }
+      }
+    }
+  }
+}

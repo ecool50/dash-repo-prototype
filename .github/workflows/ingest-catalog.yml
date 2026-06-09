@@ -1,0 +1,78 @@
+name: Ingest catalog changes
+
+# Detects changed JSON files under option_b/projects/ on push to main and
+# POSTs each one to the deployed Worker's /api/ingest endpoint.
+#
+# Required repo secrets:
+#   INGEST_URL     Worker base URL (e.g., https://dash-api.<sub>.workers.dev)
+#   INGEST_SECRET  Bearer token matching env.INGEST_SECRET on the Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'option_b/projects/**.json'
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need full history so we can compute the diff against the
+          # previous commit. fetch-depth: 2 is enough for the common case.
+          fetch-depth: 2
+
+      - name: Resolve changed JSON files
+        id: changed
+        run: |
+          # On manual dispatch or initial push there's no previous commit
+          # to diff against, so we fall back to "every JSON in projects/".
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            files=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD -- 'option_b/projects/*.json' || true)
+          else
+            files=$(ls option_b/projects/*.json 2>/dev/null || true)
+          fi
+          {
+            echo 'files<<EOF'
+            echo "$files"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+          if [ -z "$files" ]; then
+            echo "No JSON files changed under option_b/projects/."
+          else
+            echo "Will ingest:"
+            echo "$files"
+          fi
+
+      - name: POST each changed file to /api/ingest
+        if: steps.changed.outputs.files != ''
+        env:
+          INGEST_URL: ${{ secrets.INGEST_URL }}
+          INGEST_SECRET: ${{ secrets.INGEST_SECRET }}
+        run: |
+          set -euo pipefail
+          ok=0
+          fail=0
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            [ -f "$file" ] || { echo "SKIP $file (deleted)"; continue; }
+            echo "POST $file"
+            response=$(curl -s -w '\n%{http_code}' \
+              -X POST "$INGEST_URL/api/ingest" \
+              -H "authorization: Bearer $INGEST_SECRET" \
+              -H 'content-type: application/json' \
+              --data-binary @"$file")
+            status=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
+            if [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
+              echo "  ok ($status) $body"
+              ok=$((ok+1))
+            else
+              echo "  FAIL ($status) $body"
+              fail=$((fail+1))
+            fi
+          done <<< "${{ steps.changed.outputs.files }}"
+          echo "Ingested $ok, failed $fail."
+          [ "$fail" -eq 0 ]

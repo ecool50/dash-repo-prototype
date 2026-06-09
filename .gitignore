@@ -1,6 +1,22 @@
+# Local-only directories outside the dash-repo-prototype scope.
+# (These hold presentation decks, design artifacts, etc. that don't belong
+# in this repo; they live alongside it on the developer's laptop.)
+archive/
+demo/
+design/
+presentations/
+
+# Standalone files at the project root that aren't part of the catalog.
+CLAUDE.md
+JSON_template_V1.json
+README.md
+
+# Standard ignores.
 .DS_Store
 node_modules/
 .env
 .env.local
+.dev.vars
 .wrangler/
 *.log
+*.zip

@@ -1,0 +1,20 @@
+{
+  "name": "projects_vector",
+  "type": "vectorSearch",
+  "definition": {
+    "fields": [
+      {
+        "type": "vector",
+        "path": "embedding.vector",
+        "numDimensions": 1024,
+        "similarity": "cosine"
+      },
+      { "type": "filter", "path": "status" },
+      { "type": "filter", "path": "access.preset" },
+      { "type": "filter", "path": "access.viewers" },
+      { "type": "filter", "path": "tags.method_tags" },
+      { "type": "filter", "path": "project_details.data_modality" },
+      { "type": "filter", "path": "project_details.disease" }
+    ]
+  }
+}
