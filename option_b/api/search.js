@@ -16,7 +16,15 @@ import { client, DB, COLL } from './mongo.js';
 
 const EMBED_MODEL = '@cf/baai/bge-large-en-v1.5';
 
-// Retrieval thresholds, tuned for bge-large-en-v1.5:
+// Retrieval thresholds, tuned for bge-large-en-v1.5.
+//
+// TODO (Phase 2): replace this calibrated-threshold approach with a proper
+// reranker. Candidates: Workers AI bge-reranker-base over the top 20 vector
+// hits (~50ms overhead, much better discrimination than cosine alone), or
+// an LLM judge for richer answers. Current floor + gap is a workaround that
+// will need re-tuning if the corpus grows past a few dozen projects or the
+// embedding model changes.
+//
 //   SIMILARITY_FLOOR — absolute cosine-similarity floor. Below this the
 //     match is treated as noise.
 //   RELATIVE_GAP — once the best result is known, drop anything more
