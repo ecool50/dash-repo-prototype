@@ -22,6 +22,7 @@ README.md
 # Standard ignores.
 .DS_Store
 node_modules/
+dist/
 .env
 .env.local
 .dev.vars
