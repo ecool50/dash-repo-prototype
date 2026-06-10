@@ -13,8 +13,12 @@ decisions filled in.
   separation from the personal account.
 - **Cloudflare**: new DASH-owned account (no institutional team access
   identified yet).
-- **GitHub**: repo transfer to the existing DASH organisation once
-  `ecool50` has access to it.
+- **GitHub**: a FRESH repository in the existing DASH organisation, with
+  a restructured layout, created and pushed from Elijah's other (non
+  `ecool50`) GitHub account. No transfer, no history carried over: the
+  new repo starts with clean commits under the new identity. `ecool50`
+  is not used anywhere in the new setup; `ecool50/dash-repo-prototype`
+  becomes a private personal archive after cutover.
 
 ## Current deployment (the "from" side)
 
@@ -37,13 +41,13 @@ Nothing else in this runbook can start until these exist.
    `bge-large-en-v1.5`) bills per request to this account.
    Capture: the account email, the **Account ID** (dashboard right
    sidebar), and the chosen `workers.dev` subdomain.
-2. **GitHub organisation: already exists.** A DASH org exists but
-   `ecool50` is not yet a member (as of 2026-06-11 the account belongs
-   only to SydneyBioX and STAT545-UBC). Get `ecool50` added with
-   permission to create repositories; without that, the repo transfer
-   in step 4 must be accepted by an org owner instead. Admin on the
-   transferred repo is needed to set the Actions secrets.
-   Capture: the org name and the role granted.
+2. **GitHub organisation: already exists.** Elijah's other GitHub
+   account is (or will be) a member. That account needs permission to
+   create repositories in the org, and admin on the new repo to set the
+   Actions secrets. Confirm the org allows GitHub Actions on new repos.
+   Capture: the org name, the account username, and the name + email to
+   use for git commits (set per-repo with `git config user.name` /
+   `user.email`).
 3. **MongoDB Atlas organisation + project.** Create the org, a project
    (e.g. `dash-repository`), then a **Flex** cluster on AWS in
    `ap-southeast-2` (Sydney). Same tier as today; roughly USD 8-30/month
@@ -109,12 +113,34 @@ From a machine logged in to the new account (`npx wrangler login`):
    - `npm ci && npm run build && npx wrangler deploy`.
 3. Smoke test against the new URLs (walkthrough section 7.5).
 
-## Step 4: transfer the GitHub repository
+## Step 4: create the fresh repository in the DASH org
 
-1. Repo Settings → General → Transfer ownership → the DASH org.
-   History, branches, and workflow files all move; **Actions secrets do
-   not**.
-2. In the new repo: Settings → Secrets and variables → Actions, set all
+1. **Restructure locally first.** Build the new tree in a new local
+   directory (proposed layout below), init a fresh git repo, and set the
+   per-repo identity to the new account BEFORE the first commit:
+   ```sh
+   git config user.name  "<new name>"
+   git config user.email "<new email>"
+   ```
+   Proposed layout (drops option_a, the static index.html mockup, and
+   web/; flattens option_b):
+   ```
+   api/          <- option_b/api        (Worker)
+   frontend/     <- dash_frontend       (React + Vite SPA)
+   projects/     <- option_b/projects   (catalog JSONs)
+   atlas/        <- option_b/atlas      (index specs)
+   scripts/      <- option_b/scripts
+   docs/         <- option_b/docs
+   schema_v1.json
+   .github/workflows/
+   ```
+2. **Update the workflow paths** for the new layout: `deploy-worker.yml`
+   (`option_b/api` becomes `api`) and `ingest-catalog.yml`
+   (`option_b/projects` becomes `projects`). Grep docs and scripts for
+   `option_b/` and `dash_frontend/` references too.
+3. Create an empty repo in the DASH org from the new account (suggested
+   name: `dash-repository`), add it as `origin`, push.
+4. In the new repo: Settings → Secrets and variables → Actions, set all
    four:
    | Secret | Value |
    |---|---|
@@ -122,7 +148,10 @@ From a machine logged in to the new account (`npx wrangler login`):
    | `CLOUDFLARE_ACCOUNT_ID` | DASH Cloudflare account ID |
    | `INGEST_URL` | new API Worker base URL |
    | `INGEST_SECRET` | the new secret from step 3 |
-3. Update the local remote: `git remote set-url origin <new-url>`.
+5. Auth note: `gh` on this machine is logged in as `ecool50`. Use
+   `gh auth login` to add the new account (or SSH keys scoped to it)
+   before pushing, and check `gh auth status` shows the new account as
+   active for github.com.
 
 ## Step 5: verify and cut over
 
@@ -140,6 +169,10 @@ Only after step 5 is verified:
 2. Terminate the old Atlas cluster (export a final `mongodump` archive
    first, kept locally as a belt-and-braces backup).
 3. Revoke the old Cloudflare API token and the old `INGEST_SECRET`.
+4. Make `ecool50/dash-repo-prototype` private (Settings → General →
+   Danger Zone → Change visibility). It stays as a personal archive;
+   disable its Actions workflows or delete the repo secrets so nothing
+   can fire against decommissioned infrastructure.
 
 ## Things that intentionally do not change
 
