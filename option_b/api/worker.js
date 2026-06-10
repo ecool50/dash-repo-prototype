@@ -19,7 +19,7 @@ const EMBED_MODEL = '@cf/baai/bge-large-en-v1.5';
 
 export default {
   async fetch(req, env) {
-    const cors = corsHeaders(env);
+    const cors = corsHeaders(env, req);
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
 
     const url = new URL(req.url);
@@ -60,12 +60,22 @@ export default {
   },
 };
 
-function corsHeaders(env) {
-  return {
-    'access-control-allow-origin': env.ALLOWED_ORIGIN || '*',
+// ALLOWED_ORIGIN is a comma-separated allowlist (or "*"). The matching
+// request origin is echoed back; non-matching origins get no CORS headers.
+function corsHeaders(env, req) {
+  const base = {
     'access-control-allow-methods': 'GET, POST, OPTIONS',
     'access-control-allow-headers': 'content-type, authorization',
   };
+  const allowed = (env.ALLOWED_ORIGIN || '*').split(',').map((s) => s.trim());
+  if (allowed.includes('*')) {
+    return { ...base, 'access-control-allow-origin': '*' };
+  }
+  const origin = req.headers.get('origin');
+  if (origin && allowed.includes(origin)) {
+    return { ...base, 'access-control-allow-origin': origin, vary: 'origin' };
+  }
+  return base;
 }
 
 function json(payload, status, cors) {

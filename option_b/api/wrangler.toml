@@ -6,8 +6,11 @@ compatibility_flags = ["nodejs_compat"]
 [ai]
 binding = "AI"
 
+# Comma-separated allowlist of origins permitted to call the API from a
+# browser. localhost:5173 is the Vite dev server. Update the first entry
+# when the frontend moves to the DASH-owned Cloudflare account.
 [vars]
-ALLOWED_ORIGIN = "*"
+ALLOWED_ORIGIN = "https://dash-frontend.ecool50.workers.dev,http://localhost:5173"
 
 # Secrets (set via `npx wrangler secret put` from this directory):
 #   ATLAS_URI   mongodb+srv://user:pass@cluster.mongodb.net/?retryWrites=true&w=majority
