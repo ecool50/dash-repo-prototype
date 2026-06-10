@@ -24,24 +24,34 @@ decisions filled in.
 | Database | MongoDB Atlas Flex, `ap-southeast-2` (Sydney), personal account |
 | Repo | `github.com/ecool50/dash-repo-prototype` |
 
-## Step 0: account requests (DASH side, blocking)
+## Step 0: create the DASH accounts (Elijah, blocking)
 
-These need a DASH decision-maker (Alistair / Jean / Ellis) to action or
-delegate. Nothing else in this runbook can start until they exist.
+Elijah is creating the accounts. Use a DASH role email rather than a
+personal one where possible, so ownership survives staff changes.
+Nothing else in this runbook can start until these exist.
 
-1. **Cloudflare account** owned by DASH (a shared/role email, not a
-   personal one). Needs the Workers paid features only if usage outgrows
-   the free tier; the mockup currently fits in free. Workers AI is used
-   for embeddings (`bge-large-en-v1.5`) and is billed per-request on the
-   new account.
-2. **GitHub organisation** (e.g. `CPC-DASH`) to receive the repository
-   transfer. At least one DASH admin plus Elijah as member/admin.
-3. **MongoDB Atlas organisation + project** owned by DASH, with a Flex
-   cluster in `ap-southeast-2` (Sydney). Same tier as today; roughly
-   USD 8-30/month depending on usage.
+1. **Cloudflare account.** Sign up, then Workers and Pages → enable the
+   `workers.dev` subdomain (pick something like `cpc-dash`). The free
+   plan covers current usage; Workers AI (embeddings via
+   `bge-large-en-v1.5`) bills per request to this account.
+   Capture: the account email, the **Account ID** (dashboard right
+   sidebar), and the chosen `workers.dev` subdomain.
+2. **GitHub organisation** (e.g. `CPC-DASH`), free plan. Add Elijah's
+   personal account (`ecool50`) as an owner so the repo transfer and CI
+   administration work.
+   Capture: the org name.
+3. **MongoDB Atlas organisation + project.** Create the org, a project
+   (e.g. `dash-repository`), then a **Flex** cluster on AWS in
+   `ap-southeast-2` (Sydney). Same tier as today; roughly USD 8-30/month
+   depending on usage. Database Access → add a user with readWrite on
+   the `dash` database only. Network Access → allow `0.0.0.0/0` (Workers
+   have no stable egress IPs).
+   Capture: the account email and the **connection string** for the new
+   user.
 
-Open question to resolve with supervisors: which email/identity owns each
-account, and who pays (JMRF grant line).
+Still to resolve with supervisors: who pays long-term (JMRF grant line),
+and whether the accounts should later move to role emails if personal
+ones are used now.
 
 ## Step 1: pre-migration cleanup (local, done)
 
