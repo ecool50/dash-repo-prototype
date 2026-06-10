@@ -13,7 +13,8 @@ decisions filled in.
   separation from the personal account.
 - **Cloudflare**: new DASH-owned account (no institutional team access
   identified yet).
-- **GitHub**: repo transfer to a DASH organisation once it exists.
+- **GitHub**: repo transfer to the existing DASH organisation once
+  `ecool50` has access to it.
 
 ## Current deployment (the "from" side)
 
@@ -36,10 +37,13 @@ Nothing else in this runbook can start until these exist.
    `bge-large-en-v1.5`) bills per request to this account.
    Capture: the account email, the **Account ID** (dashboard right
    sidebar), and the chosen `workers.dev` subdomain.
-2. **GitHub organisation** (e.g. `CPC-DASH`), free plan. Add Elijah's
-   personal account (`ecool50`) as an owner so the repo transfer and CI
-   administration work.
-   Capture: the org name.
+2. **GitHub organisation: already exists.** A DASH org exists but
+   `ecool50` is not yet a member (as of 2026-06-11 the account belongs
+   only to SydneyBioX and STAT545-UBC). Get `ecool50` added with
+   permission to create repositories; without that, the repo transfer
+   in step 4 must be accepted by an org owner instead. Admin on the
+   transferred repo is needed to set the Actions secrets.
+   Capture: the org name and the role granted.
 3. **MongoDB Atlas organisation + project.** Create the org, a project
    (e.g. `dash-repository`), then a **Flex** cluster on AWS in
    `ap-southeast-2` (Sydney). Same tier as today; roughly USD 8-30/month
