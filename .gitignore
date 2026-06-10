@@ -11,6 +11,14 @@ CLAUDE.md
 JSON_template_V1.json
 README.md
 
+# LaTeX build artifacts (keep .tex and .pdf, ignore intermediates).
+*.aux
+*.out
+*.toc
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+
 # Standard ignores.
 .DS_Store
 node_modules/
