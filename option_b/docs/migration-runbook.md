@@ -113,6 +113,28 @@ From a machine logged in to the new account (`npx wrangler login`):
    - `npm ci && npm run build && npx wrangler deploy`.
 3. Smoke test against the new URLs (walkthrough section 7.5).
 
+### Note: frontend URL and naming (decide at cutover)
+
+The public URL is `https://<worker-name>.<subdomain>.workers.dev`. Three
+things are settable, in increasing effort:
+
+- **`workers.dev` subdomain** (`ecool50` today): chosen once per account
+  in Step 0.1 (suggested `cpc-dash`), giving
+  `https://dash-frontend.cpc-dash.workers.dev`. Account-wide, so it also
+  renames the API Worker's URL.
+- **Worker name** (`dash-frontend` today): the `name` field in
+  `dash_frontend/wrangler.toml`. Rename here if a shorter name is wanted
+  (e.g. `dash` → `https://dash.cpc-dash.workers.dev`).
+- **Custom domain** (optional, post-cutover): attach a USyd subdomain
+  such as `dash.cpc.sydney.edu.au` to the frontend Worker in Cloudflare.
+  Needs DNS delegation from USyd IT, so treat as a follow-up, not a
+  cutover blocker.
+
+No specific name is chosen yet (**TBD**). Whatever the frontend URL ends
+up as, update two things in lockstep: the first entry of `ALLOWED_ORIGIN`
+in `option_b/api/wrangler.toml` (CORS), and `VITE_API_BASE_URL` in
+`dash_frontend/.env.production` if the API URL changed too.
+
 ## Step 4: create the fresh repository in the DASH org
 
 1. **Restructure locally first.** Build the new tree in a new local
