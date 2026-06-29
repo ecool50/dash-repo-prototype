@@ -3,9 +3,9 @@
 // Behavior:
 //   - If `query` present: embed -> $vectorSearch with structured filters.
 //   - If `query` absent:  $match only, sort by updated_at desc.
-//   - Vector results are post-filtered by an absolute similarity floor
-//     and a relative-gap cutoff so nonsense queries return empty rather
-//     than top-K of whatever happens to be closest.
+//   - Vector search is the recall stage; a cross-encoder reranker then
+//     scores true query/passage relevance, reorders, and drops
+//     non-sensible matches below a calibrated floor.
 //   - Always: log to search_logs.
 //
 // `embedding.vector` is stripped from every result before return.
@@ -15,31 +15,31 @@
 import { client, DB, COLL } from './mongo.js';
 
 const EMBED_MODEL = '@cf/baai/bge-large-en-v1.5';
+const RERANK_MODEL = '@cf/baai/bge-reranker-base';
 
-// Retrieval thresholds, tuned for bge-large-en-v1.5.
+// bge-large is an asymmetric retrieval model: the query carries a short
+// instruction, the stored passages do not. Documents were ingested without
+// one (ingest.js), so adding this is query-side only and needs no re-embed.
+const QUERY_INSTRUCTION = 'Represent this sentence for searching relevant passages: ';
+
+// Two-stage retrieval:
+//   1. $vectorSearch is the recall net: pull OVERFETCH candidates by cosine.
+//   2. A cross-encoder reranker (bge-reranker-base) reads the query and each
+//      candidate's source_text together and scores true relevance. A
+//      cross-encoder discriminates far better than bi-encoder cosine, so it
+//      both reorders results and rejects the wrong-domain / tail matches that
+//      a cosine floor + relative gap used to let through.
 //
-// TODO (Phase 2): replace this calibrated-threshold approach with a proper
-// reranker. Candidates: Workers AI bge-reranker-base over the top 20 vector
-// hits (~50ms overhead, much better discrimination than cosine alone), or
-// an LLM judge for richer answers. Current floor + gap is a workaround that
-// will need re-tuning if the corpus grows past a few dozen projects or the
-// embedding model changes.
-//
-//   SIMILARITY_FLOOR — absolute cosine-similarity floor. Below this the
-//     match is treated as noise.
-//   RELATIVE_GAP — once the best result is known, drop anything more
-//     than this far behind it. Stops a single strong match from dragging
-//     in a tail of weak ones.
-//   OVERFETCH_FACTOR — how many extra candidates to pull from Atlas
-//     before filtering, so the floor and gap have something to work with.
-//
-// Calibration data (against the 10 illustrative projects, June 2026):
-//   Real-query top scores: 0.89 to 0.95
-//   Nonsense-query top scores: 0.76 to 0.80
-// Floor of 0.82 cleanly separates the two on the observed data. Re-tune
-// if the embedding model changes or the corpus shape shifts.
-const SIMILARITY_FLOOR = 0.82;
-const RELATIVE_GAP = 0.08;
+// bge-reranker-base returns a relevance score already in [0,1] per
+// candidate. RERANK_FLOOR is the probability below which a match is treated
+// as noise. Calibrated against the 10 illustrative projects (June 2026):
+// true matches score 0.20 to 0.999, off-topic / noise tops out near 0.06.
+// A floor of 0.1 sits in that gap: it keeps weak-but-valid matches (e.g.
+// "cancer" -> the colorectal project at 0.20) while dropping wrong-domain
+// tails and returning empty for nonsense. Judged per query/passage pair, so
+// it is robust to corpus growth in a way the old absolute cosine floor was
+// not. Re-tune if the reranker model changes.
+const RERANK_FLOOR = 0.1;
 const OVERFETCH_FACTOR = 4;
 const MIN_OVERFETCH = 20;
 
@@ -49,9 +49,9 @@ export async function searchProjects(body, env) {
 
   let results;
   if (query) {
-    const vec = await embed(query, env);
-    // Overfetch from Atlas, then apply the absolute + relative thresholds
-    // and truncate to the caller's requested limit.
+    const vec = await embedQuery(query, env);
+    // Overfetch a candidate net from Atlas, then let the reranker score
+    // relevance and truncate to the caller's requested limit.
     const overfetch = Math.max(limit * OVERFETCH_FACTOR, MIN_OVERFETCH);
     const pipeline = [
       {
@@ -64,11 +64,11 @@ export async function searchProjects(body, env) {
           filter: matchFilter,
         },
       },
-      { $set: { score: { $meta: 'vectorSearchScore' } } },
+      { $set: { vector_score: { $meta: 'vectorSearchScore' } } },
       { $project: hideVector() },
     ];
     const raw = await client(env).aggregate(DB, COLL, pipeline);
-    results = applyThresholds(raw).slice(0, limit);
+    results = await rerank(query, raw, env, limit);
   } else {
     results = await client(env).find(DB, COLL, matchFilter, {
       sort: { updated_at: -1 },
@@ -96,15 +96,26 @@ export async function getProject(id, env) {
   return docs[0];
 }
 
-function applyThresholds(rows) {
+// Cross-encoder rerank of the vector-search candidates. Reorders by true
+// query/passage relevance and drops anything below RERANK_FLOOR. Replaces
+// the old cosine floor + relative-gap heuristic. Sets `score` to the [0,1]
+// relevance probability; keeps `vector_score` for debugging.
+async function rerank(query, rows, env, limit) {
   if (!rows || rows.length === 0) return [];
-  // 1) absolute floor: drop anything below the noise threshold
-  const aboveFloor = rows.filter((r) => typeof r.score === 'number' && r.score >= SIMILARITY_FLOOR);
-  if (aboveFloor.length === 0) return [];
-  // 2) relative cutoff: drop anything more than RELATIVE_GAP behind the best
-  const bestScore = aboveFloor[0].score;
-  const cutoff = Math.max(SIMILARITY_FLOOR, bestScore - RELATIVE_GAP);
-  return aboveFloor.filter((r) => r.score >= cutoff);
+  const contexts = rows.map((r) => ({ text: r.embedding?.source_text || r.title || '' }));
+  const rr = await env.AI.run(RERANK_MODEL, { query, contexts, top_k: rows.length });
+  const ranked = rr?.response || [];
+  const out = [];
+  for (const item of ranked) {
+    const row = rows[item.id];
+    if (!row) continue;
+    // bge-reranker-base on Workers AI returns relevance already in [0,1].
+    const relevance = item.score;
+    if (relevance < RERANK_FLOOR) continue;
+    out.push({ ...row, score: relevance });
+    if (out.length >= limit) break;
+  }
+  return out;
 }
 
 function buildFilters({ modality, disease, method, status } = {}) {
@@ -120,8 +131,8 @@ function hideVector() {
   return { 'embedding.vector': 0, 'embedding._source_hash': 0 };
 }
 
-async function embed(query, env) {
-  const r = await env.AI.run(EMBED_MODEL, { text: [query] });
+async function embedQuery(query, env) {
+  const r = await env.AI.run(EMBED_MODEL, { text: [QUERY_INSTRUCTION + query] });
   return r?.data?.[0];
 }
 
