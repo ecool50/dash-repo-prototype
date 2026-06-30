@@ -40,6 +40,11 @@ const QUERY_INSTRUCTION = 'Represent this sentence for searching relevant passag
 // it is robust to corpus growth in a way the old absolute cosine floor was
 // not. Re-tune if the reranker model changes.
 const RERANK_FLOOR = 0.1;
+// When nothing clears RERANK_FLOOR, rescue results above this lower bar. Catches
+// paraphrase matches (e.g. "inflammatory skin" vs the doc's "atopic dermatitis",
+// which reranks ~0.06) and investigator-name matches, whose absolute rerank
+// score is low but which still stand well above the ~0.001 noise tail.
+const RESCUE_FLOOR = 0.03;
 const OVERFETCH_FACTOR = 4;
 const MIN_OVERFETCH = 20;
 
@@ -111,18 +116,15 @@ async function rerank(query, rows, env, limit) {
   if (!rows || rows.length === 0) return [];
   const contexts = rows.map((r) => ({ text: r.embedding?.source_text || r.title || '' }));
   const rr = await env.AI.run(RERANK_MODEL, { query, contexts, top_k: rows.length });
-  const ranked = rr?.response || [];
-  const out = [];
-  for (const item of ranked) {
-    const row = rows[item.id];
-    if (!row) continue;
-    // bge-reranker-base on Workers AI returns relevance already in [0,1].
-    const relevance = item.score;
-    if (relevance < RERANK_FLOOR) continue;
-    out.push({ ...row, score: relevance });
-    if (out.length >= limit) break;
-  }
-  return out;
+  // bge-reranker-base on Workers AI returns relevance already in [0,1], sorted desc.
+  const ranked = (rr?.response || [])
+    .map((item) => ({ row: rows[item.id], score: item.score }))
+    .filter((x) => x.row);
+  // Primary: keep strong matches. If none clear the strong floor, rescue the
+  // weaker-but-clearly-relevant ones rather than returning nothing.
+  let kept = ranked.filter((x) => x.score >= RERANK_FLOOR);
+  if (kept.length === 0) kept = ranked.filter((x) => x.score >= RESCUE_FLOOR);
+  return kept.slice(0, limit).map((x) => ({ ...x.row, score: x.score }));
 }
 
 function buildFilters({ modality, disease, method, status } = {}) {

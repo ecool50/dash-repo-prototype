@@ -53,7 +53,10 @@ jobs:
         id: changed
         run: |
           set -uo pipefail
-          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch: ingesting ALL project files (re-embed)."
+            files=$(ls option_b/projects/*.json 2>/dev/null || true)
+          elif git rev-parse HEAD~1 >/dev/null 2>&1; then
             files=$(git diff --name-only --diff-filter=AM HEAD~1 HEAD -- 'option_b/projects/*.json' || true)
           else
             files=$(ls option_b/projects/*.json 2>/dev/null || true)

@@ -163,8 +163,12 @@ function buildSourceText(doc) {
   const j = (v) => (Array.isArray(v) ? v.filter(Boolean).join(' ') : v == null ? '' : String(v));
   const aq = doc.analytical_questions || {};
   const qc = Array.isArray(doc.qc) ? doc.qc : [];
+  const inv = doc.investigators || {};
   const parts = [
     doc.title,
+    // Investigator names, so "projects X worked on" queries can match.
+    [inv.lead_data_scientist, j(inv.analyst_team), inv.collaborator, inv.research_leader]
+      .filter(Boolean).join(' '),
     // The current schema carries the "what was asked / what was checked"
     // signal in analytical_questions + qc, where findings.executive_summary
     // used to. Pull both so the embedding stays rich.
