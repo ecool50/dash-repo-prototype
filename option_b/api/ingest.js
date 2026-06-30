@@ -30,9 +30,9 @@ const REQUIRED_FIELDS = [
   'analytical_methods.primary_methods',
   'analytical_methods.tools_packages',
   'analytical_methods.programming_languages',
-  'findings.executive_summary',
-  'governance.indigenous_health',
-  'governance.ethics_required',
+  'analytical_questions.primary_question',
+  'provenance.indigenous_health',
+  'provenance.ethics_required',
 ];
 
 const STATUS_VALUES = ['active', 'complete', 'on_hold', 'archived'];
@@ -149,9 +149,17 @@ function validate(doc, { strict }) {
 function buildSourceText(doc) {
   // Concatenate the fields the search vector should be sensitive to.
   // Anything outside this set won't trigger re-embedding.
+  const aq = doc.analytical_questions || {};
+  const qc = Array.isArray(doc.qc) ? doc.qc : [];
   const parts = [
     doc.title,
-    doc.findings?.executive_summary,
+    // The current schema carries the "what was asked / what was checked"
+    // signal in analytical_questions + qc, where findings.executive_summary
+    // used to. Pull both so the embedding stays rich.
+    aq.primary_question,
+    (aq.other_questions || []).join(' '),
+    qc.map((q) => [q?.qc_question, q?.qc_method].filter(Boolean).join(' ')).join(' '),
+    doc.findings?.executive_summary, // legacy fallback for pre-template docs
     (doc.analytical_methods?.primary_methods || []).join(' '),
     (doc.project_details?.data_modality || []).join(' '),
     (doc.project_details?.disease || []).join(' '),

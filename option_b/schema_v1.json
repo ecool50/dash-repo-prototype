@@ -15,10 +15,9 @@
     "analytical_methods.primary_methods",
     "analytical_methods.tools_packages",
     "analytical_methods.programming_languages",
-    "findings.executive_summary",
-    "governance.indigenous_health",
-    "governance.ethics_required",
-    "embedding.source_text"
+    "analytical_questions.primary_question",
+    "provenance.indigenous_health",
+    "provenance.ethics_required"
   ],
 
   "$enums": {
