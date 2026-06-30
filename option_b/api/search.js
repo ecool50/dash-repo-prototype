@@ -74,6 +74,11 @@ export async function searchProjects(body, env) {
     ];
     const raw = await client(env).aggregate(DB, COLL, pipeline);
     results = await rerank(query, raw, env, limit);
+    // Supplement with structured investigator-name matches. The reranker scores
+    // a name buried in a sentence ("projects X worked on") too low to surface,
+    // so match name-like query tokens against the investigator fields directly.
+    const byName = await matchByInvestigator(query, env);
+    results = mergeByRef(results, byName, limit);
   } else {
     results = await client(env).find(DB, COLL, matchFilter, {
       sort: { updated_at: -1 },
@@ -125,6 +130,52 @@ async function rerank(query, rows, env, limit) {
   let kept = ranked.filter((x) => x.score >= RERANK_FLOOR);
   if (kept.length === 0) kept = ranked.filter((x) => x.score >= RESCUE_FLOOR);
   return kept.slice(0, limit).map((x) => ({ ...x.row, score: x.score }));
+}
+
+// Query words stripped before matching against investigator names, so generic
+// phrasing ("projects that ... worked on") does not match a person.
+const NAME_STOPWORDS = new Set([
+  'the', 'that', 'this', 'and', 'for', 'with', 'project', 'projects', 'work',
+  'worked', 'working', 'show', 'find', 'finding', 'looking', 'look', 'past',
+  'dash', 'who', 'what', 'which', 'was', 'were', 'are', 'did', 'done', 'some',
+  'any', 'all', 'from', 'about', 'please', 'related', 'involving', 'involved',
+  'study', 'studies', 'analysis', 'data', 'team', 'people', 'person', 'when',
+  'researcher', 'analyst', 'his', 'her', 'their', 'they', 'has', 'have', 'where',
+]);
+
+// Find projects whose investigator fields contain a name-like query token.
+// Resilient: returns [] on any error so a flaky lookup never fails the search.
+async function matchByInvestigator(query, env) {
+  try {
+    const tokens = [...new Set((query.toLowerCase().match(/[a-z]{3,}/g) || [])
+      .filter((t) => !NAME_STOPWORDS.has(t)))];
+    if (!tokens.length) return [];
+    const fields = [
+      'investigators.lead_data_scientist',
+      'investigators.collaborator',
+      'investigators.research_leader',
+      'investigators.analyst_team',
+    ];
+    const ors = [];
+    for (const t of tokens) {
+      const rx = { $regex: `\\b${t}`, $options: 'i' };
+      for (const f of fields) ors.push({ [f]: rx });
+    }
+    return await client(env).find(DB, COLL, { $or: ors }, { projection: hideVector(), limit: 10 });
+  } catch {
+    return [];
+  }
+}
+
+// Append `extra` docs not already present in `primary` (dedup on ref_number).
+function mergeByRef(primary, extra, limit) {
+  const seen = new Set(primary.map((r) => r.ref_number));
+  const out = primary.slice();
+  for (const d of extra) {
+    if (out.length >= limit) break;
+    if (!seen.has(d.ref_number)) { out.push(d); seen.add(d.ref_number); }
+  }
+  return out.slice(0, limit);
 }
 
 function buildFilters({ modality, disease, method, status } = {}) {
