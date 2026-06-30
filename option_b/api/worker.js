@@ -7,12 +7,13 @@
 //                           Frontend-facing wrapper around search with a
 //                           short templated answer string.
 //   GET  /api/projects/:id  full project document
+//   DELETE /api/projects/:id remove a project by ref (Bearer INGEST_SECRET)
 //   POST /api/ingest        validate, embed, upsert (Bearer INGEST_SECRET)
 //
 // RBAC is intentionally not in this build; Phase 1 launches public-by-default.
 
 import { searchProjects, getProject } from './search.js';
-import { ingestProject } from './ingest.js';
+import { ingestProject, deleteProject } from './ingest.js';
 import { askAgent } from './ask.js';
 
 const EMBED_MODEL = '@cf/baai/bge-large-en-v1.5';
@@ -44,6 +45,14 @@ export default {
         const id = decodeURIComponent(path.split('/').pop());
         return json(await getProject(id, env), 200, cors);
       }
+      if (req.method === 'DELETE' && path.startsWith('/api/projects/')) {
+        const auth = req.headers.get('authorization') || '';
+        if (!env.INGEST_SECRET || auth !== `Bearer ${env.INGEST_SECRET}`) {
+          return json({ error: 'unauthorized' }, 401, cors);
+        }
+        const id = decodeURIComponent(path.split('/').pop());
+        return json(await deleteProject(id, env), 200, cors);
+      }
       if (req.method === 'POST' && path === '/api/ingest') {
         const auth = req.headers.get('authorization') || '';
         const expected = `Bearer ${env.INGEST_SECRET || ''}`;
@@ -64,7 +73,7 @@ export default {
 // request origin is echoed back; non-matching origins get no CORS headers.
 function corsHeaders(env, req) {
   const base = {
-    'access-control-allow-methods': 'GET, POST, OPTIONS',
+    'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
     'access-control-allow-headers': 'content-type, authorization',
   };
   const allowed = (env.ALLOWED_ORIGIN || '*').split(',').map((s) => s.trim());

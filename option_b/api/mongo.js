@@ -43,6 +43,10 @@ export function client(env) {
       const db = await getDb(env);
       return db.collection(coll).updateOne(filter, update, opts);
     },
+    async deleteOne(_db, coll, filter) {
+      const db = await getDb(env);
+      return db.collection(coll).deleteOne(filter);
+    },
     async aggregate(_db, coll, pipeline) {
       const db = await getDb(env);
       return db.collection(coll).aggregate(pipeline).toArray();

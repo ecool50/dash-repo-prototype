@@ -109,6 +109,15 @@ export async function ingestProject(doc, env) {
   };
 }
 
+// Delete a project document by ref_number. Idempotent: deleting a missing
+// ref is a no-op (deleted: 0). Used by the catalog-sync CI to reconcile
+// projects removed from the repo.
+export async function deleteProject(ref, env) {
+  if (!ref) throw new Error('missing ref_number');
+  const res = await client(env).deleteOne(DB, COLL, { ref_number: ref });
+  return { ok: true, ref_number: ref, deleted: res?.deletedCount ?? 0 };
+}
+
 // --- helpers -------------------------------------------------------------
 
 function validate(doc, { strict }) {

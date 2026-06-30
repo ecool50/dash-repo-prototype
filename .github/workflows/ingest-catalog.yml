@@ -146,3 +146,48 @@ jobs:
           done <<< "${{ steps.changed.outputs.files }}"
           echo "Ingested $ok, failed $fail."
           [ "$fail" -eq 0 ]
+
+      - name: Delete removed project JSONs from Atlas
+        env:
+          INGEST_URL: ${{ secrets.INGEST_URL }}
+          INGEST_SECRET: ${{ secrets.INGEST_SECRET }}
+        run: |
+          set -uo pipefail
+          if ! git rev-parse HEAD~1 >/dev/null 2>&1; then
+            echo "No previous commit; skipping delete reconciliation."
+            exit 0
+          fi
+          deleted=$(git diff --name-only --diff-filter=D HEAD~1 HEAD -- 'option_b/projects/*.json' || true)
+          if [ -z "$deleted" ]; then
+            echo "No deleted project JSONs."
+            exit 0
+          fi
+          # ref_numbers still present in the current catalog. A delete+re-add of
+          # the same ref under a different filename must NOT remove the new doc.
+          current_refs=$(jq -r '.ref_number // empty' option_b/projects/*.json 2>/dev/null | sort -u)
+          fail=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            # The file is gone at HEAD; read its ref_number from the prior commit.
+            ref=$(git show "HEAD~1:$f" | jq -r '.ref_number // empty')
+            if [ -z "$ref" ]; then
+              echo "SKIP $f (no ref_number in prior version)"
+              continue
+            fi
+            if printf '%s\n' "$current_refs" | grep -qx "$ref"; then
+              echo "SKIP ref=$ref (still in current catalog; file renamed/re-added)"
+              continue
+            fi
+            echo "DELETE ref=$ref (from $f)"
+            status=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X DELETE "$INGEST_URL/api/projects/$ref" \
+              -H "authorization: Bearer $INGEST_SECRET")
+            if [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
+              echo "  ok ($status)"
+            else
+              echo "  FAIL ($status)"
+              fail=$((fail+1))
+            fi
+          done <<< "$deleted"
+          echo "Delete step done; failures: $fail."
+          [ "$fail" -eq 0 ]
