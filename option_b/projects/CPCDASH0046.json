@@ -16,7 +16,7 @@
       "spatial transcriptomics",
       "single-cell analysis"
     ],
-    "disease": "Parkinson's disease",
+    "disease": ["Parkinson's disease"],
     "data_modality": [
       "spatial transcriptomics",
       "single-cell spatial gene expression",
