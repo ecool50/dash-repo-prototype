@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extract QMD Project JSON"
+  short_description: "Summarize QMD reports into project metadata"
+  default_prompt: "Use $extract-qmd-project-json to create clean project JSON and missing-field warnings from a QMD report."
