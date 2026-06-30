@@ -164,13 +164,15 @@ function DashboardContent() {
                       <p>{match.ref_number}</p>
                       <h3>{match.title}</h3>
                     </div>
-                    <span className="score-badge">Score: {match.score.toFixed(3)}</span>
+                    {typeof match.score === "number" && (
+                      <span className="score-badge">Score: {match.score.toFixed(3)}</span>
+                    )}
                   </div>
 
                   <dl style={{ margin: "16px 0 0 0", display: "flex", flexDirection: "column", gap: "8px" }}>
                     <div style={{ display: "flex", gap: "8px", fontSize: "14px" }}>
                       <dd style={{ backgroundColor: "#daadadff", padding: "10px", borderRadius: "4px", margin: 0, color: "#0f172a" }}>
-                        {match.investigators?.chief_investigator || "Not specified"}
+                        {match.investigators?.lead_data_scientist || formatList(match.investigators?.analyst_team)}
                       </dd>
                     </div>
                     <div style={{ display: "flex", gap: "8px", fontSize: "14px" }}>
@@ -225,12 +227,14 @@ function DashboardContent() {
             <div className="drawer-body">
               <section className="drawer-section">
                 <h3>Investigators</h3>
-                <h4>Chief Investigator</h4>
-                <p>{formatList(drawerProject.investigators?.chief_investigator)}</p>
-                <h4>Lead Analyst</h4>
-                <p>{formatList(drawerProject.investigators?.lead_analyst)}</p>
-                <h4>Supervisor</h4>
-                <p>{formatList(drawerProject.investigators?.supervisor)}</p>
+                <h4>Lead Data Scientist</h4>
+                <p>{formatList(drawerProject.investigators?.lead_data_scientist)}</p>
+                <h4>Analyst Team</h4>
+                <p>{formatList(drawerProject.investigators?.analyst_team)}</p>
+                <h4>Collaborator</h4>
+                <p>{formatList(drawerProject.investigators?.collaborator)}</p>
+                <h4>Research Leader</h4>
+                <p>{formatList(drawerProject.investigators?.research_leader)}</p>
               </section>
 
               <section className="drawer-section">
@@ -255,8 +259,9 @@ function DashboardContent() {
               </section>
 
               <section className="drawer-section">
-                <h3>Key Findings</h3>
-                <p>{drawerProject.findings?.executive_summary || "No executive summary."}</p>
+                <h3>Analytical Questions</h3>
+                <p>{drawerProject.analytical_questions?.primary_question || "No primary question specified."}</p>
+                {renderContentList(drawerProject.analytical_questions?.other_questions, "")}
               </section>
 
 
