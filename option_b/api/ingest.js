@@ -158,6 +158,9 @@ function validate(doc, { strict }) {
 function buildSourceText(doc) {
   // Concatenate the fields the search vector should be sensitive to.
   // Anything outside this set won't trigger re-embedding.
+  // `j` tolerates a field authored as a string or null, not just an array,
+  // so an inconsistently-shaped document still embeds instead of throwing.
+  const j = (v) => (Array.isArray(v) ? v.filter(Boolean).join(' ') : v == null ? '' : String(v));
   const aq = doc.analytical_questions || {};
   const qc = Array.isArray(doc.qc) ? doc.qc : [];
   const parts = [
@@ -166,14 +169,14 @@ function buildSourceText(doc) {
     // signal in analytical_questions + qc, where findings.executive_summary
     // used to. Pull both so the embedding stays rich.
     aq.primary_question,
-    (aq.other_questions || []).join(' '),
+    j(aq.other_questions),
     qc.map((q) => [q?.qc_question, q?.qc_method].filter(Boolean).join(' ')).join(' '),
     doc.findings?.executive_summary, // legacy fallback for pre-template docs
-    (doc.analytical_methods?.primary_methods || []).join(' '),
-    (doc.project_details?.data_modality || []).join(' '),
-    (doc.project_details?.disease || []).join(' '),
-    (doc.project_details?.keywords || []).join(' '),
-    (doc.analytical_methods?.tools_packages || []).join(' '),
+    j(doc.analytical_methods?.primary_methods),
+    j(doc.project_details?.data_modality),
+    j(doc.project_details?.disease),
+    j(doc.project_details?.keywords),
+    j(doc.analytical_methods?.tools_packages),
   ];
   return parts.filter(Boolean).join(' | ');
 }

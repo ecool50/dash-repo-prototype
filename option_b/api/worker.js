@@ -6,13 +6,14 @@
 //   POST /api/ask           { query, limit } -> { answer, matches }
 //                           Frontend-facing wrapper around search with a
 //                           short templated answer string.
+//   GET  /api/projects     list all ref_numbers (catalog reconcile)
 //   GET  /api/projects/:id  full project document
 //   DELETE /api/projects/:id remove a project by ref (Bearer INGEST_SECRET)
 //   POST /api/ingest        validate, embed, upsert (Bearer INGEST_SECRET)
 //
 // RBAC is intentionally not in this build; Phase 1 launches public-by-default.
 
-import { searchProjects, getProject } from './search.js';
+import { searchProjects, getProject, listProjectRefs } from './search.js';
 import { ingestProject, deleteProject } from './ingest.js';
 import { askAgent } from './ask.js';
 
@@ -40,6 +41,9 @@ export default {
       if (req.method === 'POST' && path === '/api/ask') {
         const body = await req.json();
         return json(await askAgent(body, env), 200, cors);
+      }
+      if (req.method === 'GET' && path === '/api/projects') {
+        return json(await listProjectRefs(env), 200, cors);
       }
       if (req.method === 'GET' && path.startsWith('/api/projects/')) {
         const id = decodeURIComponent(path.split('/').pop());

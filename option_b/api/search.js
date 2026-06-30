@@ -87,6 +87,13 @@ export async function searchProjects(body, env) {
   return { results };
 }
 
+// All ref_numbers currently in the collection. Used by the catalog-sync CI
+// to reconcile deletions (delete any Atlas ref no longer in the repo).
+export async function listProjectRefs(env) {
+  const docs = await client(env).find(DB, COLL, {}, { projection: { ref_number: 1, _id: 0 } });
+  return { refs: docs.map((d) => d.ref_number).filter(Boolean) };
+}
+
 export async function getProject(id, env) {
   const docs = await client(env).find(DB, COLL, { ref_number: id }, {
     limit: 1,

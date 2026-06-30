@@ -1,7 +1,12 @@
 name: Ingest catalog changes
 
-# Detects changed JSON files under option_b/projects/ on push to main and
-# POSTs each one to the deployed Worker's /api/ingest endpoint.
+# On push to main (or manual dispatch):
+#   1. POST each changed option_b/projects/*.json to the Worker's /api/ingest.
+#   2. Reconcile deletions: delete any ref_number in Atlas that is no longer
+#      present in the repo.
+#
+# The MongoDB driver runs inside the Worker and intermittently throws a
+# Cloudflare 1101 under load, so every call is retried a few times.
 #
 # Required repo secrets:
 #   INGEST_URL     Worker base URL (e.g., https://dash-api.<sub>.workers.dev)
@@ -29,12 +34,8 @@ jobs:
           INGEST_SECRET: ${{ secrets.INGEST_SECRET }}
         run: |
           set -uo pipefail
-
-          # Length checks (won't reveal the values, but tells us if either
-          # secret is empty or missing).
           echo "INGEST_URL length: ${#INGEST_URL}"
           echo "INGEST_SECRET length: ${#INGEST_SECRET}"
-
           if [ -z "$INGEST_URL" ]; then
             echo "::error::INGEST_URL secret is empty. Set it in repo Settings → Secrets and variables → Actions."
             exit 1
@@ -43,27 +44,9 @@ jobs:
             echo "::error::INGEST_SECRET secret is empty."
             exit 1
           fi
-
-          # Format check (does not print the URL itself).
           case "$INGEST_URL" in
-            https://*)
-              echo "INGEST_URL: starts with https:// (good)"
-              ;;
-            http://*)
-              echo "::error::INGEST_URL starts with http:// (must be https://)."
-              exit 1
-              ;;
-            *)
-              echo "::error::INGEST_URL does not start with https://. Check for missing scheme, angle brackets, or stray whitespace."
-              exit 1
-              ;;
-          esac
-
-          # Trailing-slash check (URL construction below appends /api/ingest).
-          case "$INGEST_URL" in
-            */)
-              echo "::warning::INGEST_URL has a trailing slash; will be tolerated but consider removing it."
-              ;;
+            https://*) echo "INGEST_URL: starts with https:// (good)" ;;
+            *) echo "::error::INGEST_URL must start with https://. Check for a missing scheme or stray whitespace."; exit 1 ;;
           esac
 
       - name: Resolve changed JSON files
@@ -83,8 +66,7 @@ jobs:
           if [ -z "$files" ]; then
             echo "No JSON files changed under option_b/projects/."
           else
-            echo "Will ingest:"
-            echo "$files"
+            echo "Will ingest:"; echo "$files"
           fi
 
       - name: POST each changed file to /api/ingest
@@ -98,96 +80,75 @@ jobs:
           fail=0
           while IFS= read -r file; do
             [ -z "$file" ] && continue
-            if [ ! -f "$file" ]; then
-              echo "SKIP $file (deleted)"
-              continue
-            fi
-            echo "POST $file"
-
-            # Capture curl exit code separately so a connection failure
-            # produces a clear message instead of an opaque "exit code 3".
-            set +e
-            response=$(curl -sS -w $'\n%{http_code}' \
-              -X POST "$INGEST_URL/api/ingest" \
-              -H "authorization: Bearer $INGEST_SECRET" \
-              -H 'content-type: application/json' \
-              --data-binary @"$file" 2>&1)
-            curl_exit=$?
-            set -e
-
-            if [ "$curl_exit" -ne 0 ]; then
-              echo "  FAIL (curl exit $curl_exit)"
-              echo "  $response" | sed 's/^/    /'
-              case "$curl_exit" in
-                3)  echo "  → curl rejected the URL as malformed. Check INGEST_URL." ;;
-                6)  echo "  → curl could not resolve the host. Check INGEST_URL." ;;
-                7)  echo "  → curl could not connect. The Worker may not be deployed." ;;
-                22) echo "  → server returned >=400. See response body above." ;;
-              esac
-              fail=$((fail+1))
-              continue
-            fi
-
-            status=$(echo "$response" | tail -n1)
-            body=$(echo "$response" | sed '$d')
-            if [ -z "$status" ]; then
-              echo "  FAIL (no status returned)"
-              echo "  $body" | sed 's/^/    /'
-              fail=$((fail+1))
-              continue
-            fi
-            if [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
-              echo "  ok ($status) $body"
-              ok=$((ok+1))
-            else
-              echo "  FAIL ($status) $body"
-              fail=$((fail+1))
-            fi
+            [ -f "$file" ] || { echo "SKIP $file (deleted)"; continue; }
+            done_ok=0
+            for attempt in 1 2 3 4 5; do
+              response=$(curl -sS -w $'\n%{http_code}' \
+                -X POST "$INGEST_URL/api/ingest" \
+                -H "authorization: Bearer $INGEST_SECRET" \
+                -H 'content-type: application/json' \
+                --data-binary @"$file" 2>&1) || true
+              status=$(printf '%s' "$response" | tail -n1)
+              body=$(printf '%s' "$response" | sed '$d')
+              if printf '%s' "$status" | grep -qE '^2[0-9][0-9]$'; then
+                echo "POST $file ok ($status) $body"
+                done_ok=1; break
+              fi
+              echo "POST $file attempt $attempt -> ${status:-err}; retrying"
+              sleep 3
+            done
+            if [ "$done_ok" -eq 1 ]; then ok=$((ok+1)); else echo "  FAIL $file"; fail=$((fail+1)); fi
           done <<< "${{ steps.changed.outputs.files }}"
           echo "Ingested $ok, failed $fail."
           [ "$fail" -eq 0 ]
 
-      - name: Delete removed project JSONs from Atlas
+      - name: Reconcile deletions (remove Atlas refs not in the repo)
+        if: always()
         env:
           INGEST_URL: ${{ secrets.INGEST_URL }}
           INGEST_SECRET: ${{ secrets.INGEST_SECRET }}
         run: |
           set -uo pipefail
-          if ! git rev-parse HEAD~1 >/dev/null 2>&1; then
-            echo "No previous commit; skipping delete reconciliation."
+          # Reconcile against the live collection rather than the git diff, so a
+          # removed project is deleted no matter which commit dropped it, the
+          # step is idempotent/self-healing, and it runs even if some ingests
+          # failed (deletion is independent of new-doc ingestion).
+          local_refs=$(jq -r '.ref_number // empty' option_b/projects/*.json 2>/dev/null | sort -u)
+          if [ -z "$local_refs" ]; then
+            echo "::error::no local ref_numbers found; refusing to reconcile (would delete everything)."
+            exit 1
+          fi
+          # List Atlas refs, retried (the Worker's Mongo layer is intermittently flaky).
+          atlas_refs=""
+          for attempt in 1 2 3 4 5 6; do
+            resp=$(curl -sS "$INGEST_URL/api/projects" 2>&1) || true
+            atlas_refs=$(printf '%s' "$resp" | jq -r '.refs[]? // empty' 2>/dev/null | sort -u || true)
+            [ -n "$atlas_refs" ] && break
+            echo "list attempt $attempt: no refs yet; retrying"; sleep 3
+          done
+          if [ -z "$atlas_refs" ]; then
+            echo "::error::could not list Atlas refs after retries"; exit 1
+          fi
+          to_delete=$(comm -23 <(printf '%s\n' "$atlas_refs") <(printf '%s\n' "$local_refs"))
+          if [ -z "$to_delete" ]; then
+            echo "Atlas matches the repo; nothing to delete."
             exit 0
           fi
-          deleted=$(git diff --name-only --diff-filter=D HEAD~1 HEAD -- 'option_b/projects/*.json' || true)
-          if [ -z "$deleted" ]; then
-            echo "No deleted project JSONs."
-            exit 0
-          fi
-          # ref_numbers still present in the current catalog. A delete+re-add of
-          # the same ref under a different filename must NOT remove the new doc.
-          current_refs=$(jq -r '.ref_number // empty' option_b/projects/*.json 2>/dev/null | sort -u)
+          echo "Refs to delete: $(printf '%s ' $to_delete)"
           fail=0
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            # The file is gone at HEAD; read its ref_number from the prior commit.
-            ref=$(git show "HEAD~1:$f" | jq -r '.ref_number // empty')
-            if [ -z "$ref" ]; then
-              echo "SKIP $f (no ref_number in prior version)"
-              continue
-            fi
-            if printf '%s\n' "$current_refs" | grep -qx "$ref"; then
-              echo "SKIP ref=$ref (still in current catalog; file renamed/re-added)"
-              continue
-            fi
-            echo "DELETE ref=$ref (from $f)"
-            status=$(curl -sS -o /dev/null -w '%{http_code}' \
-              -X DELETE "$INGEST_URL/api/projects/$ref" \
-              -H "authorization: Bearer $INGEST_SECRET")
-            if [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
-              echo "  ok ($status)"
-            else
-              echo "  FAIL ($status)"
-              fail=$((fail+1))
-            fi
-          done <<< "$deleted"
-          echo "Delete step done; failures: $fail."
+          while IFS= read -r ref; do
+            [ -z "$ref" ] && continue
+            done_ok=0
+            for attempt in 1 2 3 4; do
+              status=$(curl -sS -o /dev/null -w '%{http_code}' \
+                -X DELETE "$INGEST_URL/api/projects/$ref" \
+                -H "authorization: Bearer $INGEST_SECRET" 2>/dev/null) || status=000
+              if printf '%s' "$status" | grep -qE '^2[0-9][0-9]$'; then
+                echo "DELETE $ref ok ($status)"; done_ok=1; break
+              fi
+              echo "DELETE $ref attempt $attempt -> $status; retrying"; sleep 2
+            done
+            [ "$done_ok" -eq 1 ] || { echo "  FAILED to delete $ref"; fail=$((fail+1)); }
+          done <<< "$to_delete"
+          echo "Reconcile-delete done; failures: $fail."
           [ "$fail" -eq 0 ]
