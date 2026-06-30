@@ -159,28 +159,88 @@ in `option_b/api/wrangler.toml` (CORS), and `VITE_API_BASE_URL` in
 2. **Update the workflow paths** for the new layout: `deploy-worker.yml`
    (`option_b/api` becomes `api`) and `ingest-catalog.yml`
    (`option_b/projects` becomes `projects`). Grep docs and scripts for
-   `option_b/` and `dash_frontend/` references too.
+   `option_b/` and `dash_frontend/` references too. Note: on GHES these
+   workflows will not run (Actions is disabled), but keep them in the tree:
+   they document the build and would work as-is if the repo is ever mirrored
+   to github.com. Publishing on GHES uses the scripts described below.
 3. Create an empty repo in the DASH org from the new account (suggested
    name: `dash-repository`), add it as `origin`, push.
-4. In the new repo: Settings → Secrets and variables → Actions, set all
-   four:
-   | Secret | Value |
-   |---|---|
-   | `CLOUDFLARE_API_TOKEN` | token created on the DASH Cloudflare account |
-   | `CLOUDFLARE_ACCOUNT_ID` | DASH Cloudflare account ID |
-   | `INGEST_URL` | new API Worker base URL |
-   | `INGEST_SECRET` | the new secret from step 3 |
-5. Auth note: `gh` on this machine is logged in as `ecool50`. Use
-   `gh auth login` to add the new account (or SSH keys scoped to it)
-   before pushing, and check `gh auth status` shows the new account as
-   active for github.com.
+4. **No Actions secrets to set (GHES).** USyd GHES has Actions disabled, so
+   there is no CI to feed. The Worker already carries its own secrets from
+   Step 3 (`ATLAS_URI`, `INGEST_SECRET`, via `wrangler secret put`), and
+   deploys run from a logged-in `wrangler` (no `CLOUDFLARE_API_TOKEN`
+   needed). For publishing, keep `INGEST_URL` (the Worker base URL) and
+   `INGEST_SECRET` (matching the Worker's) in your local environment for the
+   `publish.sh` / `ingest.sh` scripts. See "Publishing on GHES" below.
+5. Auth note: `gh` on this machine is logged in to both `github.com`
+   (`ecool50`) and the USyd GHES host. Use `gh auth login` / SSH keys for the
+   account that will own the DASH repo, and check `gh auth status` shows it
+   active for the GHES host before pushing.
 
 ## Step 5: verify and cut over
 
-1. Push a trivial commit touching one project JSON; confirm both
-   workflows go green and the change lands in the new Atlas cluster.
+1. Touch one project JSON and publish it with
+   `INGEST_URL=... INGEST_SECRET=... option_b/scripts/publish.sh`; confirm the
+   script reports `ok` and the change lands in the new Atlas cluster
+   (`GET /api/projects/<ref>`).
 2. Run the full smoke test against the new frontend.
 3. Share the new frontend URL with the team.
+
+## Publishing on GHES (no GitHub Actions)
+
+USyd GHES has Actions disabled, so the `deploy-worker` and `ingest-catalog`
+workflows that drove the old github.com setup do not fire here. Publishing is
+done with two committed scripts instead. Both reach the Worker over plain
+HTTPS, so they run from anywhere with internet and the secrets; nothing has to
+run inside USyd's network.
+
+**One-off setup (per machine):**
+
+- `npx wrangler login` to the DASH Cloudflare account (for code deploys).
+- Put the publish env in your shell (or a gitignored `.env` you `source`):
+  ```sh
+  export INGEST_URL=https://dash-api.<dash-sub>.workers.dev
+  export INGEST_SECRET=<the Worker's INGEST_SECRET>
+  ```
+
+**Publish a catalog change (the common case).** After editing project JSONs,
+use the wrapper in place of `git push`: it pushes to GHES, then re-ingests.
+
+```sh
+option_b/scripts/publish.sh
+```
+
+`scripts/ingest.sh` POSTs *every* `projects/*.json` to the Worker's
+`/api/ingest`. Because ingest is idempotent and the Worker skips re-embedding
+unchanged projects (source-text hash), re-sending the whole catalog is cheap:
+only genuinely changed projects cost a Workers AI call, so there is no need to
+detect which files changed.
+
+**Deploy a code change.** Worker or frontend code is not handled by the publish
+scripts (they cannot run `wrangler`). Deploy those manually:
+
+```sh
+npm run wrangler:deploy            # Worker (option_b/api)
+# frontend: cd dash_frontend && npm ci && npm run build && npx wrangler deploy
+```
+
+**Optional: periodic sync instead of remembering to publish.** The catalog
+changes rarely, so a timer is plenty. On any always-on machine that can reach
+GHES and the internet, a cron that pulls and re-ingests covers it:
+
+```cron
+*/30 * * * *  cd /srv/dash && git pull --quiet && \
+  INGEST_URL=... INGEST_SECRET=... option_b/scripts/ingest.sh
+```
+
+No webhooks, and it tolerates any latency (worst case is "published at the
+next tick"). It does not handle deletions: ingest upserts, so a project
+removed from the repo stays in Atlas until deleted by hand. Fine for an
+append-mostly Phase 1 catalog.
+
+If GHES later turns out to be reachable from the public internet, this can be
+upgraded to a webhook into a Cloudflare Cron-Trigger Worker for hands-off
+publishing, but the manual/cron path is the zero-infra baseline.
 
 ## Step 6: decommission the old deployment
 
@@ -201,4 +261,7 @@ Only after step 5 is verified:
 - No code changes are required beyond the two URL strings
   (`dash_frontend/.env.production` and the `ALLOWED_ORIGIN` allowlist).
 - Workers are stateless; all persistent state moves with Atlas.
-- The workflow files are repo-local and survive the transfer untouched.
+- The Worker's `/api/ingest` endpoint is unchanged; only the *trigger*
+  differs (a GitHub Action on the old github.com repo, the `publish.sh` /
+  cron scripts on GHES). The workflow files stay in the tree but do not run
+  on GHES.
