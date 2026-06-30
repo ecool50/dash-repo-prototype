@@ -4,7 +4,10 @@
 // Both degrade gracefully (deterministic fallbacks) on any error, so a flaky
 // or refusing model never fails the /api/ask request.
 
-const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+// 8B keeps each /api/ask fast and light. The 70B model was ~2.5s/call, so two
+// calls plus Mongo kept the isolate busy ~6s and tipped it into Cloudflare 1101
+// crashes (surfacing as "Failed to fetch"); 8B finishes in ~0.5-1s/call.
+const MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 
 const PLAN_SCHEMA = {
   type: 'object',

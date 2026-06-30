@@ -154,11 +154,14 @@ const NAME_STOPWORDS = new Set([
 async function matchByInvestigator(query, people, env) {
   try {
     let tokens;
-    if (Array.isArray(people) && people.length) {
-      // Explicit names from the planner: tokenise them, no stopword filter.
+    if (Array.isArray(people)) {
+      // Explicit people from the planner. An empty array means the query names
+      // no one, so skip the lookup entirely (saves a Mongo round-trip, and
+      // thus a 1101-crash chance, on topical queries).
       tokens = [...new Set(people.flatMap((p) => String(p).toLowerCase().match(/[a-z]{3,}/g) || []))];
     } else {
-      // Heuristic: name-like tokens from the raw query, minus generic words.
+      // No planner (direct /api/search): heuristic name-like tokens from the
+      // raw query, minus generic words.
       tokens = [...new Set((String(query || '').toLowerCase().match(/[a-z]{3,}/g) || [])
         .filter((t) => !NAME_STOPWORDS.has(t)))];
     }
