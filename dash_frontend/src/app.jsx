@@ -16,6 +16,31 @@ const SUGGESTIONS = [
 
 const starterText = `Hi - I help you find past DASH work. Ask in your own words. You're viewing as an analyst.`;
 
+// The API Worker runs the MongoDB driver in-isolate, which intermittently
+// hard-crashes (Cloudflare 1101, no CORS headers) and surfaces as a
+// "Failed to fetch". Attempts are independent, so retry a few times before
+// giving up.
+async function askWithRetry(query, attempts = 4) {
+  let lastErr;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const response = await fetch(`${API_BASE}/api/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, limit: 4 }),
+      });
+      if (response.ok) return await response.json();
+      lastErr = new Error("The DASH API could not process that search.");
+    } catch (err) {
+      lastErr = err; // network/CORS failure on a hard Worker crash
+    }
+    if (i < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 500 + i * 400));
+    }
+  }
+  throw lastErr;
+}
+
 function DashboardContent() {
 
   const [query, setQuery] = useState("");
@@ -41,24 +66,7 @@ function DashboardContent() {
     setMessages((items) => [...items, { text: cleanQuery }]);
 
     try {
-
-      const response = await fetch(`${API_BASE}/api/ask`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: cleanQuery,
-          limit: 4
-        }),
-      });
-
-      if (!response.ok) {
-        const detail = await response.json().catch(() => ({}));
-        throw new Error(detail.detail || "The DASH API could not process that search.");
-      }
-
-      const data = await response.json();
+      const data = await askWithRetry(cleanQuery);
       setResult(data);
       setMessages((items) => [...items, { role: "agent", text: data.answer }]);
     } catch (err) {
