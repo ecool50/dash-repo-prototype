@@ -1,14 +1,14 @@
-// Ask pipeline for POST /api/ask.
+// Ask pipeline for POST /api/ask — the conversational agent surface.
 //
-// Frontend-facing endpoint. Wraps the search pipeline and returns the
-// response shape the dash-frontend SPA expects:
-//   { answer: string, matches: [project_document_with_score, ...] }
+// Flow: planQuery (LLM extracts people + a clean topical query) -> searchProjects
+// (semantic + reranker, plus structured investigator match on the planned
+// people) -> synthesizeAnswer (LLM writes a grounded summary). Each LLM step
+// falls back gracefully so the request never fails on a flaky/refusing model.
 //
-// The `answer` is a short templated string that frames the search results
-// in agent-style prose. For the mockup we keep this deterministic; swap
-// in env.AI.run with a small LLM model later if you want richer answers.
+// Returns { answer: string, matches: [project_document_with_score, ...] }.
 
 import { searchProjects } from './search.js';
+import { planQuery, synthesizeAnswer } from './agent.js';
 
 export async function askAgent(body, env) {
   const { query, limit = 5 } = body || {};
@@ -21,17 +21,18 @@ export async function askAgent(body, env) {
   }
 
   const trimmed = query.trim();
-  const searchResult = await searchProjects({ query: trimmed, limit }, env);
-  const matches = searchResult.results || [];
+  const plan = await planQuery(trimmed, env);
 
-  let answer;
-  if (matches.length === 0) {
-    answer = `I could not find any past DASH projects that match "${trimmed}". Try rephrasing or broadening the question.`;
-  } else if (matches.length === 1) {
-    answer = `I found one DASH project that looks relevant: "${matches[0].title}". Open the details to see the methods and findings.`;
-  } else {
-    answer = `I found ${matches.length} DASH projects related to "${trimmed}". The closest match is "${matches[0].title}"; the rest are ordered by similarity.`;
-  }
+  // Planned topic drives semantic search; planned people drive the investigator
+  // match. For a pure-person query the topic is empty (skip semantic); if the
+  // planner gave us neither, fall back to searching the raw query.
+  const topic = plan.topic && plan.topic.trim()
+    ? plan.topic.trim()
+    : (plan.people.length ? '' : trimmed);
+
+  const searchResult = await searchProjects({ query: topic, limit, people: plan.people }, env);
+  const matches = searchResult.results || [];
+  const answer = await synthesizeAnswer(trimmed, matches, env);
 
   return { answer, matches };
 }

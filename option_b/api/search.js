@@ -49,35 +49,41 @@ const OVERFETCH_FACTOR = 4;
 const MIN_OVERFETCH = 20;
 
 export async function searchProjects(body, env) {
-  const { query, filters = {}, limit = 10 } = body || {};
+  const { query, filters = {}, limit = 10, people } = body || {};
   const matchFilter = buildFilters(filters);
+  const hasQuery = typeof query === 'string' && query.trim().length > 0;
+  const hasPeople = Array.isArray(people) && people.length > 0;
 
   let results;
-  if (query) {
-    const vec = await embedQuery(query, env);
-    // Overfetch a candidate net from Atlas, then let the reranker score
-    // relevance and truncate to the caller's requested limit.
-    const overfetch = Math.max(limit * OVERFETCH_FACTOR, MIN_OVERFETCH);
-    const pipeline = [
-      {
-        $vectorSearch: {
-          index: 'projects_vector',
-          path: 'embedding.vector',
-          queryVector: vec,
-          numCandidates: 200,
-          limit: overfetch,
-          filter: matchFilter,
+  if (hasQuery || hasPeople) {
+    results = [];
+    if (hasQuery) {
+      const vec = await embedQuery(query, env);
+      // Overfetch a candidate net from Atlas, then let the reranker score
+      // relevance and truncate to the caller's requested limit.
+      const overfetch = Math.max(limit * OVERFETCH_FACTOR, MIN_OVERFETCH);
+      const pipeline = [
+        {
+          $vectorSearch: {
+            index: 'projects_vector',
+            path: 'embedding.vector',
+            queryVector: vec,
+            numCandidates: 200,
+            limit: overfetch,
+            filter: matchFilter,
+          },
         },
-      },
-      { $set: { vector_score: { $meta: 'vectorSearchScore' } } },
-      { $project: hideVector() },
-    ];
-    const raw = await client(env).aggregate(DB, COLL, pipeline);
-    results = await rerank(query, raw, env, limit);
+        { $set: { vector_score: { $meta: 'vectorSearchScore' } } },
+        { $project: hideVector() },
+      ];
+      const raw = await client(env).aggregate(DB, COLL, pipeline);
+      results = await rerank(query, raw, env, limit);
+    }
     // Supplement with structured investigator-name matches. The reranker scores
     // a name buried in a sentence ("projects X worked on") too low to surface,
-    // so match name-like query tokens against the investigator fields directly.
-    const byName = await matchByInvestigator(query, env);
+    // so match names directly: explicit `people` (from the agent planner) when
+    // given, otherwise name-like tokens from the raw query.
+    const byName = await matchByInvestigator(hasQuery ? query : '', people, env);
     results = mergeByRef(results, byName, limit);
   } else {
     results = await client(env).find(DB, COLL, matchFilter, {
@@ -145,10 +151,17 @@ const NAME_STOPWORDS = new Set([
 
 // Find projects whose investigator fields contain a name-like query token.
 // Resilient: returns [] on any error so a flaky lookup never fails the search.
-async function matchByInvestigator(query, env) {
+async function matchByInvestigator(query, people, env) {
   try {
-    const tokens = [...new Set((query.toLowerCase().match(/[a-z]{3,}/g) || [])
-      .filter((t) => !NAME_STOPWORDS.has(t)))];
+    let tokens;
+    if (Array.isArray(people) && people.length) {
+      // Explicit names from the planner: tokenise them, no stopword filter.
+      tokens = [...new Set(people.flatMap((p) => String(p).toLowerCase().match(/[a-z]{3,}/g) || []))];
+    } else {
+      // Heuristic: name-like tokens from the raw query, minus generic words.
+      tokens = [...new Set((String(query || '').toLowerCase().match(/[a-z]{3,}/g) || [])
+        .filter((t) => !NAME_STOPWORDS.has(t)))];
+    }
     if (!tokens.length) return [];
     const fields = [
       'investigators.lead_data_scientist',
