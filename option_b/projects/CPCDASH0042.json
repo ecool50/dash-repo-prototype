@@ -1,0 +1,132 @@
+{
+  "ref_number": "0042",
+  "title": "CUT&RUN protocol quality assessment for in-house pAG-MNase peak calls",
+  "status": "active",
+  "investigators": {
+    "collaborator": null,
+    "lead_data_scientist": "Yue Cao",
+    "analyst_team": [],
+    "research_leader": null
+  },
+  "partners": null,
+  "project_details": {
+    "research_area": [
+      "epigenomics",
+      "chromatin profiling",
+      "omics quality control",
+      "protocol assessment"
+    ],
+    "disease": [],
+    "data_modality": [
+      "CUT&RUN",
+      "peak-by-sample matrix",
+      "promoter-associated gene-level peak signal"
+    ],
+    "keywords": [
+      "CUT&RUN",
+      "pAG-MNase",
+      "peak overlap",
+      "promoter-associated genes",
+      "technical reproducibility",
+      "freeze-thaw",
+      "T-cell titration",
+      "antigen presentation"
+    ],
+    "platform": {
+      "provider": null
+    },
+    "sample_info": {
+      "sample_type": "K562 cells and T cells",
+      "n_samples": 51,
+      "organism": "Homo sapiens"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "Are in-house USYD CUT&RUN peak calls of sufficient quality for downstream epigenomic analyses?",
+    "other_questions": [
+      "Are technical duplicate CUT&RUN samples reproducible at the promoter-associated gene level?",
+      "How similar are in-house K562 CUT&RUN signals to Henikoff reference data?",
+      "Does pAG-MNase freeze-thaw cycling reduce CUT&RUN data quality?",
+      "What T-cell titration provides sufficient signal for sequencing and downstream analysis?",
+      "How strongly does antigen presentation alter promoter-associated CUT&RUN signatures?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Do the in-house datasets show adequate promoter-associated signal?",
+      "qc_method": "non-zero genes, zero genes, and library size summaries"
+    },
+    {
+      "qc_question": "Are technical duplicate samples reproducible?",
+      "qc_method": "Jaccard index and Fisher's exact test"
+    },
+    {
+      "qc_question": "Is the in-house K562 signal consistent with external Henikoff reference data?",
+      "qc_method": "promoter-associated gene overlap, Jaccard index, Fisher's exact test, and Venn diagrams"
+    },
+    {
+      "qc_question": "Does pAG-MNase freeze-thaw cycling affect data quality?",
+      "qc_method": "pairwise overlap across 1x, 2x, 4x, and 6x freeze-thaw conditions"
+    },
+    {
+      "qc_question": "Does T-cell titration affect peak detection?",
+      "qc_method": "pairwise overlap across 50k, 100k, 250k, and 500k cell inputs"
+    },
+    {
+      "qc_question": "Does antigen presentation induce expected biological variability in the signatures?",
+      "qc_method": "pairwise overlap and Venn diagrams across antigen presentation conditions"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "BED peak processing",
+      "peak-by-sample matrix analysis",
+      "promoter/TSS-centred filtering within ±5 kb",
+      "gene-level collapsing of promoter-associated peaks",
+      "pairwise overlap analysis",
+      "Jaccard index",
+      "Fisher's exact test",
+      "Venn diagram overlap analysis"
+    ],
+    "tools_packages": [
+      "IRanges",
+      "GenomicRanges",
+      "ChIPseeker",
+      "TxDb.Hsapiens.UCSC.hg19.knownGene",
+      "GenomicFeatures",
+      "org.Hs.eg.db",
+      "ggvenn"
+    ],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": null
+  },
+  "provenance": {
+    "indigenous_health": null,
+    "ethics_required": null
+  },
+  "tags": {
+    "asana_tags": [
+      "omics",
+      "quality-control",
+      "epigenomics"
+    ],
+    "method_tags": [
+      "CUT&RUN",
+      "peak overlap",
+      "Jaccard index",
+      "Fisher's exact test",
+      "promoter annotation"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

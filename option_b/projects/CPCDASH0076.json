@@ -1,0 +1,139 @@
+{
+  "ref_number": "0076",
+  "title": "Promoter-associated histone-mark differential enrichment across serially stimulated CAR T-cells",
+  "status": "active",
+  "investigators": {
+    "collaborator": null,
+    "lead_data_scientist": "Yue Cao",
+    "analyst_team": [],
+    "research_leader": null
+  },
+  "partners": null,
+  "project_details": {
+    "research_area": [
+      "epigenomics",
+      "chromatin profiling",
+      "CAR T-cell biology",
+      "immunotherapy"
+    ],
+    "disease": [],
+    "data_modality": [
+      "CUT&RUN peak-by-sample matrix",
+      "H3K4me2 promoter-associated peak signal",
+      "H3K27me3 promoter-associated peak signal",
+      "gene-level collapsed promoter peak counts"
+    ],
+    "keywords": [
+      "CAR T-cells",
+      "CD8",
+      "CD4",
+      "serial stimulation",
+      "H3K4me2",
+      "H3K27me3",
+      "promoter-associated peaks",
+      "differential enrichment"
+    ],
+    "platform": {
+      "provider": null
+    },
+    "sample_info": {
+      "sample_type": "CD8 and CD4 CAR T-cell chromatin profiling samples across serial stimulation timepoints",
+      "n_samples": 84,
+      "organism": "Homo sapiens"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "How do promoter-associated H3K4me2 and H3K27me3 enrichment patterns change in CD8 and CD4 CAR T-cells after repeated stimulation?",
+    "other_questions": [
+      "Which promoter-associated genes change in CD8 CAR T-cells after extensive rechallenge from 0x to 9x stimulation?",
+      "Which promoter-associated genes differ between product CD8 CAR T-cells and CD8 CAR T-cells that lose expansion capacity after 3x stimulation?",
+      "Do rechallenged CD8 CAR T-cells differ between early and later expansion states from 3x to 6x stimulation?",
+      "Are CD8 CAR T-cell 0x versus 6x and 3x versus 6x results robust after excluding donor sRCHDO2?",
+      "Which promoter-associated genes change in CD4 CAR T-cells across 0x, 3x, and 6x stimulation comparisons?",
+      "Is chromatin remodelling more extensive in CD8 than CD4 CAR T-cells, and more pronounced for H3K4me2 than H3K27me3?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Are the input peak-by-sample data structures suitable for downstream analysis?",
+      "qc_method": "peak-by-sample matrix dimension check and duplicated-peak check"
+    },
+    {
+      "qc_question": "Are promoter-associated peaks defined consistently before gene-level analysis?",
+      "qc_method": "ChIPseeker annotation using TSS ±5 kb promoter regions"
+    },
+    {
+      "qc_question": "Are multiple peaks mapping to the same gene handled consistently?",
+      "qc_method": "sum promoter peak counts by annotated gene"
+    },
+    {
+      "qc_question": "Are comparisons restricted to the intended mark, cell type, and stimulation timepoints?",
+      "qc_method": "metadata filtering by histone mark, CD4/CD8 cell type, and 0x/3x/6x/9x timepoint"
+    },
+    {
+      "qc_question": "Are donor-sensitive CD8 comparisons checked for robustness?",
+      "qc_method": "sensitivity analysis excluding donor sRCHDO2"
+    },
+    {
+      "qc_question": "Are significance and effect-size thresholds documented for interpretation?",
+      "qc_method": "volcano plots using adjusted p-value, raw p-value, and absolute log2 fold-change cutoff of 1.5"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "peak-by-sample matrix analysis",
+      "promoter/TSS-centred filtering within ±5 kb",
+      "peak-to-gene annotation",
+      "gene-level collapsing of promoter-associated peak counts",
+      "mark-specific differential enrichment analysis",
+      "timepoint-wise pairwise comparisons",
+      "limma-voom modelling with timepoint as predictor",
+      "empirical Bayes moderation",
+      "sensitivity analysis excluding one donor",
+      "volcano plot visualisation",
+      "ranked differential-enrichment table generation"
+    ],
+    "tools_packages": [
+      "limma",
+      "edgeR",
+      "IRanges",
+      "GenomicRanges",
+      "ChIPseeker",
+      "TxDb.Hsapiens.UCSC.hg19.knownGene",
+      "org.Hs.eg.db"
+    ],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": null
+  },
+  "provenance": {
+    "indigenous_health": null,
+    "ethics_required": null
+  },
+  "tags": {
+    "asana_tags": [
+      "epigenomics",
+      "CAR-T",
+      "differential-enrichment",
+      "chromatin-profiling"
+    ],
+    "method_tags": [
+      "CUT&RUN",
+      "H3K4me2",
+      "H3K27me3",
+      "promoter annotation",
+      "limma-voom",
+      "volcano plot"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

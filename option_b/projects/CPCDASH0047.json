@@ -1,0 +1,119 @@
+{
+  "ref_number": "0047",
+  "title": "Self-Supervised Learning for Wearable Data",
+  "status": "active",
+  "investigators": {
+    "collaborator": "Matthew Ahmadi",
+    "lead_data_scientist": "Xiangnan Xu",
+    "analyst_team": "Xiangnan Xu, Elijah Willie and Marni Torkel",
+    "research_leader": "Jie Kang"
+  },
+  "partners": null,
+  "project_details": {
+    "research_area": [
+      "wearable sensing",
+      "self-supervised learning",
+      "activity classification"
+    ],
+    "disease": null,
+    "data_modality": [
+      "wearable accelerometer time series",
+      "wrist sensor data",
+      "thigh sensor data"
+    ],
+    "keywords": [
+      "wearable data",
+      "self-supervised learning",
+      "Capture24",
+      "Sydney data",
+      "Finland data",
+      "cross-dataset transfer"
+    ],
+    "platform": {
+      "provider": null
+    },
+    "sample_info": {
+      "sample_type": "wearable sensor datasets",
+      "n_samples": null,
+      "organism": "human"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "Can self-supervised wearable sensor representations support activity classification across wrist and thigh datasets?",
+    "other_questions": [
+      "Can a Capture24 wrist classifier identify sit-stand, sleep, walking, bicycling, vehicle, and mixed activities?",
+      "Can Sydney wrist and thigh classifiers identify sitting, standing, walking, cycling, and related activities?",
+      "How well do classifiers transfer between Capture24 and Sydney wearable datasets?",
+      "Which normalisation strategy improves cross-dataset wearable activity classification?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Are wearable datasets harmonised to a common format?",
+      "qc_method": "Finland, Sydney, and Capture24 preprocessing scripts"
+    },
+    {
+      "qc_question": "Is classifier performance stable across folds?",
+      "qc_method": "5-fold cross-validation"
+    },
+    {
+      "qc_question": "Are class-level errors interpretable?",
+      "qc_method": "row-normalised confusion matrices"
+    },
+    {
+      "qc_question": "Does normalisation affect transfer performance?",
+      "qc_method": "Sydney, Capture24, and subject-wise normalisation compared"
+    },
+    {
+      "qc_question": "Does the model generalise across datasets and sensor placements?",
+      "qc_method": "Capture24-to-Sydney wrist/thigh transfer evaluation"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "self-supervised representation learning",
+      "downstream activity classification",
+      "cross-validation",
+      "cross-dataset transfer evaluation",
+      "confusion matrix analysis"
+    ],
+    "tools_packages": [
+      "torch",
+      "pytorch_lightning",
+      "einops",
+      "numpy",
+      "pandas",
+      "scikit-learn",
+      "pyreadr"
+    ],
+    "programming_languages": [
+      "Python"
+    ]
+  },
+  "outputs": {
+    "github_repo": "https://github.sydney.edu.au/Charles-Perkins-Centre-Data-Science-Hub/CPCDASH0047"
+  },
+  "provenance": {
+    "indigenous_health": "No",
+    "ethics_required": "No"
+  },
+  "tags": {
+    "asana_tags": [
+      "wearable-data",
+      "self-supervised-learning",
+      "activity-classification"
+    ],
+    "method_tags": [
+      "classification",
+      "cross-validation",
+      "transfer-learning"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

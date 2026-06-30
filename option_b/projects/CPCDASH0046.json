@@ -1,0 +1,125 @@
+{
+  "ref_number": "0046",
+  "title": "Transcriptional age acceleration analysis in the Prkn x Polg double mutator mouse model",
+  "status": "active",
+  "investigators": {
+    "collaborator": "Wen Li",
+    "lead_data_scientist": "Xiangnan Xu",
+    "analyst_team": "Xiangnan Xu and Beilei Bian",
+    "research_leader": "Jean Yang"
+  },
+  "partners": "Kolling Institute",
+  "project_details": {
+    "research_area": [
+      "aging biology",
+      "neurodegeneration",
+      "spatial transcriptomics",
+      "single-cell analysis"
+    ],
+    "disease": "Parkinson's disease",
+    "data_modality": [
+      "spatial transcriptomics",
+      "single-cell spatial gene expression",
+      "pseudo-bulk counts"
+    ],
+    "keywords": [
+      "Prkn x Polg",
+      "partial common aging signature",
+      "microglia",
+      "neuronal cells",
+      "mt versus wt",
+      "normal aging signature"
+    ],
+    "platform": {
+      "provider": "Xenium"
+    },
+    "sample_info": {
+      "sample_type": "mouse brain spatial transcriptomics samples",
+      "n_samples": 6,
+      "organism": "mouse"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "Do Prkn x Polg double-mutant mice show accelerated transcriptional aging signatures compared with wild-type mice?",
+    "other_questions": [
+      "Does the partial common aging signature differ between mt and wt mice at the cell-type level?",
+      "Does the partial common aging signature show spatial differences between mt and wt mice?",
+      "Are normal aging signatures enriched among mt versus wt differential expression results?",
+      "How much of the reference aging signature is represented in the study gene panel?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Are samples grouped consistently as mt and wt?",
+      "qc_method": "sample metadata from wt1-3 and mt1-3"
+    },
+    {
+      "qc_question": "Are expression values normalised before scoring?",
+      "qc_method": "logNormCounts(size.factor = cell_area)"
+    },
+    {
+      "qc_question": "Are low-information genes removed before VISION?",
+      "qc_method": "genes with zero counts removed"
+    },
+    {
+      "qc_question": "Is aging-signature feature coverage sufficient?",
+      "qc_method": "approximately 40% CAS gene-panel coverage"
+    },
+    {
+      "qc_question": "Is statistical power sufficient for formal testing?",
+      "qc_method": "three mice per genotype; descriptive trends noted"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "signature scoring",
+      "pseudo-bulk aggregation",
+      "single-cell score comparison",
+      "spatial pattern visualisation",
+      "gene set enrichment analysis"
+    ],
+    "tools_packages": [
+      "SingleCellExperiment",
+      "SpatialExperiment",
+      "scuttle",
+      "edgeR",
+      "limma",
+      "DropletUtils",
+      "VISION",
+      "Seurat",
+      "fgsea",
+      "clusterProfiler",
+      "DOSE"
+    ],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": "https://github.sydney.edu.au/Charles-Perkins-Centre-Data-Science-Hub/CPCDASH0046"
+  },
+  "provenance": {
+    "indigenous_health": "No",
+    "ethics_required": "No"
+  },
+  "tags": {
+    "asana_tags": [
+      "aging",
+      "spatial-transcriptomics",
+      "neurodegeneration"
+    ],
+    "method_tags": [
+      "signature-scoring",
+      "pseudo-bulk",
+      "spatial-analysis",
+      "enrichment-analysis"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

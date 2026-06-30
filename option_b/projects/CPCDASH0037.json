@@ -1,0 +1,139 @@
+{
+  "ref_number": "0037",
+  "title": "Spatial Validation of CAF2 Fibroblasts in Hepatocellular Carcinoma Using Imaging Mass Cytometry",
+  "status": "active",
+  "investigators": {
+    "collaborator": "Angela Ferguson",
+    "lead_data_scientist": "Elijah Willie",
+    "analyst_team": ["Elijah Willie", "Jie Kang", "Ellis Patrick", "Jean Yang"],
+    "research_leader": null
+  },
+  "partners": null,
+  "project_details": {
+    "research_area": [
+      "spatial proteomics",
+      "imaging mass cytometry",
+      "single-cell spatial analysis",
+      "tumour microenvironment"
+    ],
+    "disease": [
+      "hepatocellular carcinoma"
+    ],
+    "data_modality": [
+      "imaging mass cytometry",
+      "spatial proteomics",
+      "multiplexed tissue imaging"
+    ],
+    "keywords": [
+      "CAF2 fibroblasts",
+      "cancer-associated fibroblasts",
+      "tumour microenvironment",
+      "cell segmentation",
+      "cell type composition",
+      "over-segmentation",
+      "aSMA",
+      "PACE framework"
+    ],
+    "platform": {
+      "provider": null
+    },
+    "sample_info": {
+      "sample_type": "HCC liver tissue microarray cores (tumour and non-tumour ROIs across two TMAs, HCC3 and HCC4); ~1.27 million segmented cells over 88 shared ROIs",
+      "n_samples": 17,
+      "organism": "human"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "Can the simpleSeg and CellProfiler pipelines be reliably joined on object ID so that validated per-cell intensities and spatial coordinates can be combined for spatial analysis of CAF2 fibroblasts in HCC?",
+    "other_questions": [
+      "Is the per-core file structure, ROI metadata, and object ID mapping consistent across segmentation masks, intensity files, and clinical metadata?",
+      "Do simpleSeg and CellProfiler produce consistent per-cell marker intensities?",
+      "What explains the aSMA discrepancy between the two pipelines?",
+      "Is there evidence of over-segmentation in the provided segmentation masks?",
+      "Are the FlowJo manual-gating cell type annotations biologically coherent?",
+      "Do cell type proportions differ between tumour and non-tumour tissue?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Are all images, masks, and clinical metadata complete and correctly structured?",
+      "qc_method": "file audit; 91 images, 89 masks, 88 shared ROIs; image/mask alignment and metadata checks"
+    },
+    {
+      "qc_question": "Are the segmentation masks correctly registered to the raw images?",
+      "qc_method": "plotPixels mask overlays on DNA1/CD45/CK8 for representative ROIs"
+    },
+    {
+      "qc_question": "Do simpleSeg and CellProfiler measure the same cells with consistent intensities?",
+      "qc_method": "per-marker Pearson correlation (>0.9999 for all markers except aSMA, r = 0.083)"
+    },
+    {
+      "qc_question": "Is there evidence of over-segmentation in the masks?",
+      "qc_method": "per-ROI cell area distribution vs 50 µm² threshold; cell count vs median area scatter"
+    },
+    {
+      "qc_question": "Are marker distributions consistent across ROIs after normalisation?",
+      "qc_method": "per-ROI density plots before/after trim99+mean+PC1 normalisation"
+    },
+    {
+      "qc_question": "Are the cell type annotations biologically coherent?",
+      "qc_method": "grouped marker expression heatmap, UMAP, and per-ROI cell type composition"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "per-cell segmentation quantification",
+      "marker intensity normalisation",
+      "cross-pipeline intensity validation",
+      "over-segmentation assessment",
+      "cell type annotation via manual gating",
+      "UMAP dimensionality reduction",
+      "differential cell type composition (linear mixed effects)",
+      "spatial co-localisation analysis",
+      "spatial neighbourhood/niche identification"
+    ],
+    "tools_packages": [
+      "cytomapper",
+      "simpleSeg",
+      "EBImage",
+      "spicyR",
+      "lisaClust",
+      "scater",
+      "lme4",
+      "lmerTest"
+    ],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": null
+  },
+  "provenance": {
+    "indigenous_health": null,
+    "ethics_required": null
+  },
+  "tags": {
+    "asana_tags": [
+      "imaging-mass-cytometry",
+      "hepatocellular-carcinoma",
+      "spatial-proteomics",
+      "tumour-microenvironment",
+      "cancer-associated-fibroblasts"
+    ],
+    "method_tags": [
+      "cell-segmentation",
+      "cell-typing",
+      "spatial-analysis",
+      "normalisation",
+      "quality-control"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

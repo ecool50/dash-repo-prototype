@@ -1,0 +1,118 @@
+{
+  "ref_number": "0054",
+  "title": "Results on ACOD1",
+  "status": "active",
+  "investigators": {
+    "collaborator": "Yann Ng and John O'Sullivan",
+    "lead_data_scientist": "Xiangnan Xu",
+    "analyst_team": "Xiangnan Xu and Yue Cao",
+    "research_leader": "Jean Yang"
+  },
+  "partners": null,
+  "project_details": {
+    "research_area": [
+      "cardiovascular disease",
+      "single-cell genomics",
+      "gene expression analysis"
+    ],
+    "disease": [
+      "heart failure",
+      "Dilated Cardiomyopathy",
+      "Myocardial Infarction",
+      "Arrhythmogenic Right Ventricular Cardiomyopathy"
+    ],
+    "data_modality": [
+      "public available dataset",
+      "single-cell RNA-seq"
+    ],
+    "keywords": [
+      "ACOD1",
+      "CAD",
+      "cardiac muscle cells",
+      "heart failure",
+      "public cardiac single-cell datasets",
+      "bootstrap analysis"
+    ],
+    "platform": {
+      "provider": null
+    },
+    "sample_info": {
+      "sample_type": "public cardiac single-cell datasets",
+      "n_samples": null,
+      "organism": "human"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "How does ACOD1 expression and detection vary across public cardiac single-cell datasets, cell types, and heart failure disease groups?",
+    "other_questions": [
+      "Do CAD and ACOD1 show different expression patterns in public cardiac single-cell datasets?",
+      "Is the proportion of ACOD1-expressing cells different between healthy and heart failure samples?",
+      "Is ACOD1 expression distributed differently across cardiac cell types?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Are expression values on a comparable scale?",
+      "qc_method": "log-normalised expression values"
+    },
+    {
+      "qc_question": "Are ACOD1-positive cells consistently defined?",
+      "qc_method": "expression > 0"
+    },
+    {
+      "qc_question": "Are donor and cell-type groups sufficiently represented?",
+      "qc_method": "minimum cells and donors per group"
+    },
+    {
+      "qc_question": "Could weak ACOD1 detection limit interpretation?",
+      "qc_method": "4/191795 Kuppe cells and 508/881081 Reichart cells detected"
+    },
+    {
+      "qc_question": "Are disease-control differences statistically stable?",
+      "qc_method": "bootstrap confidence intervals"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "single-cell expression analysis",
+      "co-expression comparison",
+      "cell-type stratified comparison",
+      "donor-level proportion analysis",
+      "bootstrap confidence intervals"
+    ],
+    "tools_packages": [
+      "zellkonverter",
+      "SingleCellExperiment",
+      "scater"
+    ],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": null
+  },
+  "provenance": {
+    "indigenous_health": "No",
+    "ethics_required": "No"
+  },
+  "tags": {
+    "asana_tags": [
+      "single-cell",
+      "cardiovascular",
+      "gene-expression"
+    ],
+    "method_tags": [
+      "expression-analysis",
+      "cell-type-comparison",
+      "bootstrap"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

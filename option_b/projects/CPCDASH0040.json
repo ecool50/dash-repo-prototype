@@ -1,0 +1,147 @@
+{
+  "ref_number": "0040",
+  "title": "Xenium single-cell transcriptomic analysis of ketogenic diet and chemotherapy response in leukaemia",
+  "status": "active",
+  "investigators": {
+    "collaborator": "Dr Maria Lastra Cagigas",
+    "lead_data_scientist": "Yue Cao",
+    "analyst_team": [
+      "Jean Yang"
+    ],
+    "research_leader": null
+  },
+  "partners": null,
+  "project_details": {
+    "research_area": [
+      "single-cell transcriptomics",
+      "spatial transcriptomics",
+      "cancer genomics",
+      "diet-treatment response"
+    ],
+    "disease": [
+      "leukaemia"
+    ],
+    "data_modality": [
+      "10x Genomics Xenium",
+      "imaging-based single-cell transcriptomics",
+      "cell-by-gene count matrix",
+      "targeted gene panel"
+    ],
+    "keywords": [
+      "Xenium",
+      "leukaemia",
+      "ketogenic diet",
+      "chemotherapy",
+      "cell-type annotation",
+      "differential expression",
+      "pseudobulk",
+      "pathway analysis"
+    ],
+    "platform": {
+      "provider": "10x Genomics Xenium"
+    },
+    "sample_info": {
+      "sample_type": "dissociated PBMC cells from human leukaemia patient samples",
+      "n_samples": 15,
+      "organism": "Homo sapiens"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "Does ketogenic diet modify chemotherapy-associated transcriptional responses in leukaemia cell subtypes?",
+    "other_questions": [
+      "Are low-quality cells, slide-localisation artefacts, and batch effects sufficiently controlled before downstream analysis?",
+      "Can the Xenium single-cell profiles be assigned to biologically interpretable leukaemia-like and normal PBMC cell types?",
+      "Which genes and pathways change between baseline and chemotherapy within each cancer-like cell type?",
+      "At the chemotherapy timepoint, which genes and pathways differ between ketogenic and control diet groups?",
+      "Does diet alter the magnitude or direction of chemotherapy-associated gene-expression changes in specific leukaemia cell types?",
+      "Are leukemic stem-cell-like and blast-like populations distinguishable for cell-type-specific downstream analysis?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Are cells outside the expected slide/sample regions removed?",
+      "qc_method": "slide-coordinate filtering using sample boundary plots"
+    },
+    {
+      "qc_question": "Are low-quality cells removed using defensible thresholds?",
+      "qc_method": "genes detected >= 10, total transcripts >= 15, and cell area 20-300"
+    },
+    {
+      "qc_question": "Does the retained dataset remain large enough for downstream analysis?",
+      "qc_method": "2,047,464 cells and 5,101 genes retained after QC"
+    },
+    {
+      "qc_question": "Are batch or sample effects visible after QC?",
+      "qc_method": "UMAP by batch and sample showed no obvious batch effect"
+    },
+    {
+      "qc_question": "Are unassigned cells lower quality and therefore suitable for removal?",
+      "qc_method": "genes detected, transcript count, and cell-area distributions; 13% unassigned cells removed"
+    },
+    {
+      "qc_question": "Are cell-type annotations biologically plausible?",
+      "qc_method": "scClassify with Van Galen AML reference, UMAP separation, and marker-gene validation"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "single-cell quality control filtering",
+      "log-normalisation",
+      "PCA and UMAP visualisation",
+      "reference-based supervised cell-type annotation",
+      "marker-gene validation",
+      "pseudobulk aggregation by sample and cell type",
+      "cell-type-specific differential expression analysis",
+      "limma-voom modelling with patient blocking",
+      "diet-by-chemotherapy interaction modelling",
+      "GO gene set enrichment analysis"
+    ],
+    "tools_packages": [
+      "SingleCellExperiment",
+      "scater",
+      "scran",
+      "scuttle",
+      "Seurat",
+      "scClassify",
+      "edgeR",
+      "limma",
+      "clusterProfiler",
+      "org.Hs.eg.db",
+      "enrichplot",
+      "uwot"
+    ],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": null
+  },
+  "provenance": {
+    "indigenous_health": null,
+    "ethics_required": null
+  },
+  "tags": {
+    "asana_tags": [
+      "single-cell",
+      "spatial-transcriptomics",
+      "cancer",
+      "differential-expression"
+    ],
+    "method_tags": [
+      "Xenium",
+      "quality control",
+      "scClassify",
+      "pseudobulk",
+      "limma-voom",
+      "GSEA"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "ref_number": "0052",
+  "title": "Identify transcriptional changes induced by NR treatment and determine the interaction effect of NR treatment and SARM1 activation",
+  "status": "active",
+  "investigators": {
+    "collaborator": "Andrea Loreto",
+    "lead_data_scientist": "Xiangnan Xu",
+    "analyst_team": "Xiangnan Xu",
+    "research_leader": "Heejung Shim"
+  },
+  "partners": "Snow Vision Accelerator",
+  "project_details": {
+    "research_area": [
+      "bulk RNA-seq",
+      "transcriptomics",
+      "differential expression",
+      "pathway analysis"
+    ],
+    "disease": [],
+    "data_modality": [
+      "raw FASTQ",
+      "bulk RNA-seq",
+      "gene counts",
+      "exon counts"
+    ],
+    "keywords": [
+      "NR treatment",
+      "SARM1 activation",
+      "interaction effect",
+      "DESeq2",
+      "DEXSeq",
+      "eNODAL",
+      "STRING network"
+    ],
+    "platform": {
+      "provider": "Illumina"
+    },
+    "sample_info": {
+      "sample_type": "bulk RNA-seq samples across four treatment conditions",
+      "n_samples": 12,
+      "organism": "mouse"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "Which transcriptional changes induced by NR treatment are mediated by SARM1 activation?",
+    "other_questions": [
+      "Which genes and exons differ across NR, SARM1 inhibitor, combined treatment, and control conditions?",
+      "Are there genes with significant NR-by-SARM1 interaction effects?",
+      "Which genes show a suppression-like pattern where NR effects are reduced by SARM1 inhibition?",
+      "Which pathways, networks, and response-pattern clusters explain the SARM1-dependent effects?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Are raw sequencing data represented consistently across samples?",
+      "qc_method": "12 samples; 4 FASTQ files per sample"
+    },
+    {
+      "qc_question": "Are reads assigned to genes at acceptable rates?",
+      "qc_method": ">80% featureCounts gene assignment"
+    },
+    {
+      "qc_question": "Are low-expression genes filtered before normalisation?",
+      "qc_method": "edgeR filterByExpr; 17089 of 78334 genes retained"
+    },
+    {
+      "qc_question": "Does normalisation address library-composition differences?",
+      "qc_method": "TMM-normalised logCPM"
+    },
+    {
+      "qc_question": "Are samples consistent after filtering and normalisation?",
+      "qc_method": "PCA, sample distance, correlation, mean-variance trend"
+    },
+    {
+      "qc_question": "Are count matrices aligned with sample metadata?",
+      "qc_method": "sample-name consistency checks for gene, exon, and DEXSeq inputs"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "RNA-seq preprocessing",
+      "featureCounts assignment QC",
+      "gene-level differential expression",
+      "exon-level differential expression",
+      "interaction modelling",
+      "likelihood ratio testing",
+      "GO enrichment analysis",
+      "network and hub gene analysis",
+      "response-pattern clustering"
+    ],
+    "tools_packages": [
+      "edgeR",
+      "DESeq2",
+      "DEXSeq",
+      "rtracklayer",
+      "clusterProfiler",
+      "org.Mm.eg.db",
+      "AnnotationDbi",
+      "eNODAL",
+      "STRINGdb",
+      "igraph"
+    ],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": null
+  },
+  "provenance": {
+    "indigenous_health": "No",
+    "ethics_required": "No"
+  },
+  "tags": {
+    "asana_tags": [
+      "bulk-rnaseq",
+      "nr-treatment",
+      "sarm1",
+      "differential-expression"
+    ],
+    "method_tags": [
+      "deseq2",
+      "dexseq",
+      "interaction-model",
+      "pathway-analysis",
+      "network-analysis"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

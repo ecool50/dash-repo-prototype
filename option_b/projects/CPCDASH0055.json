@@ -1,0 +1,141 @@
+{
+  "ref_number": "0055",
+  "title": "Proteomic investigation of the effect of PDE4 inhibitor Crisaborole on atopic dermatitis",
+  "status": "active",
+  "investigators": {
+    "collaborator": "Dr Ali Azimi and Professor Pablo Fernández-Peñas",
+    "lead_data_scientist": "Dr Elijah Willie",
+    "analyst_team": [
+      "Dr Elijah Willie",
+      "Dr Jie Kang",
+      "Professor Jean Yang"
+    ],
+    "research_leader": null
+  },
+  "partners": null,
+  "project_details": {
+    "research_area": [
+      "proteomics",
+      "mass spectrometry",
+      "differential abundance analysis",
+      "pathway analysis"
+    ],
+    "disease": [
+      "atopic dermatitis"
+    ],
+    "data_modality": [
+      "proteomics",
+      "DIA mass spectrometry",
+      "protein intensity matrix"
+    ],
+    "keywords": [
+      "crisaborole",
+      "betamethasone",
+      "PDE4 inhibitor",
+      "tape-strip proteomics",
+      "differential abundance",
+      "GSEA",
+      "cornified envelope / keratinization",
+      "limma"
+    ],
+    "platform": {
+      "provider": null
+    },
+    "sample_info": {
+      "sample_type": "tape-strip skin biopsies (treated AD, untreated AD, normal skin) across baseline and post-treatment timepoints from 15 patients",
+      "n_samples": 90,
+      "organism": "human"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "What proteomic changes does the topical PDE4 inhibitor crisaborole induce in treated atopic dermatitis lesions, and how do they compare with the corticosteroid betamethasone?",
+    "other_questions": [
+      "Which proteins change in treated AD lesions (DAY45 vs DAY1) under crisaborole, and under betamethasone?",
+      "Does the crisaborole versus betamethasone treatment effect differ in the treated-AD proteome (interaction contrast)?",
+      "Which biological pathways are altered by each treatment, and which are shared versus treatment-specific?",
+      "Are the differential-abundance results robust to outlier sample exclusion (CRIS05-DAY45-TAD, BETA16-DAY45-TAD), prior systemic treatment, and MNAR-aware modelling?",
+      "Do the headline findings align with published drug-mechanism and atopic dermatitis literature?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Is the cohort balanced and complete across the design?",
+      "qc_method": "per-patient completeness checks; 15 patients x 6 samples (90 analysis + 16 pooled QC injections)"
+    },
+    {
+      "qc_question": "Does missingness indicate sample- or feature-level quality concerns?",
+      "qc_method": "MNAR diagnostic (per-protein mean log2 vs % missing); per-sample missingness 10-77%, median ~45%, tissue-driven MNAR"
+    },
+    {
+      "qc_question": "Are sample intensity distributions aligned across the run?",
+      "qc_method": "per-sample log2 intensity boxplots/densities; Spectronaut normalisation judged sufficient, no extra global normalisation"
+    },
+    {
+      "qc_question": "Is instrument quantification reproducible and is there run-order drift?",
+      "qc_method": "pooled-QC %CV (median 17.3%) and median log2 vs injection index; small significant drift not structured in analysis samples"
+    },
+    {
+      "qc_question": "Which samples are global outliers?",
+      "qc_method": "PCA on complete-case proteins; CRIS05-DAY45-TAD and BETA16-DAY45-TAD flagged on PC2 (>70% missing / right-shifted intensity)"
+    },
+    {
+      "qc_question": "Should KNN imputation be the primary modelling input?",
+      "qc_method": "KNN vs NA-coded PCA/UMAP sensitivity; NA-coded matrix retained (KNN does not rescue outliers and adds a UMAP artefact)"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "DIA proteomics QC and preprocessing",
+      "missingness and MNAR diagnostics",
+      "PCA and UMAP exploratory analysis",
+      "paired differential abundance analysis",
+      "treatment-by-time interaction modelling",
+      "outlier-exclusion and covariate sensitivity analysis",
+      "MNAR-aware differential abundance",
+      "GSEA pathway analysis",
+      "literature-based assessment"
+    ],
+    "tools_packages": [
+      "Spectronaut",
+      "limma",
+      "proDA",
+      "impute",
+      "uwot",
+      "fgsea",
+      "msigdbr"
+    ],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": null
+  },
+  "provenance": {
+    "indigenous_health": null,
+    "ethics_required": null
+  },
+  "tags": {
+    "asana_tags": [
+      "proteomics",
+      "atopic-dermatitis",
+      "crisaborole",
+      "betamethasone",
+      "mass-spectrometry"
+    ],
+    "method_tags": [
+      "differential-abundance",
+      "limma",
+      "gsea",
+      "proda",
+      "pathway-analysis"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

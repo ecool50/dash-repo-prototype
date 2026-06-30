@@ -1,0 +1,117 @@
+{
+  "ref_number": "0057",
+  "title": "Sample Size Determination for Eating Disorder Screening Tool Validation",
+  "status": "active",
+  "investigators": {
+    "collaborator": "Dr Eve House",
+    "lead_data_scientist": "Elijah Willie",
+    "analyst_team": [
+      "Elijah Willie",
+      "Alistair Senior"
+    ],
+    "research_leader": null
+  },
+  "partners": null,
+  "project_details": {
+    "research_area": [
+      "sample size determination",
+      "statistical power analysis",
+      "study design",
+      "diagnostic test accuracy"
+    ],
+    "disease": [
+      "eating disorders"
+    ],
+    "data_modality": [],
+    "keywords": [
+      "sample size",
+      "statistical power",
+      "screening tool validation",
+      "sensitivity",
+      "exact binomial test",
+      "prevalence",
+      "Monte Carlo simulation"
+    ],
+    "platform": {
+      "provider": null
+    },
+    "sample_info": {
+      "sample_type": "people living with obesity (prospective recruitment for screening tool validation)",
+      "n_samples": null,
+      "organism": "human"
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "How many true eating disorder cases, and what total enrolment, are required to detect a clinically meaningful drop in screening tool sensitivity from 0.90 to 0.80 with at least 80% power?",
+    "other_questions": [
+      "How does the assumed eating disorder prevalence translate the required number of true cases into total participant enrolment?",
+      "Do Monte Carlo simulations that treat the number of true cases as a Binomial(N, prevalence) draw confirm the analytical sample size?",
+      "Which sample size framework (precision-based Buderer's formula, binomial simulation, McNemar's paired test, exact binomial power, or correlation CI width) is most appropriate for the validation design?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Where do the assumed screening tool sensitivity and specificity values come from?",
+      "qc_method": "published estimates for IOI-S, SDE, ESP, and EDE-Q (Bryant 2021, Maguen 2018, Cotton 2003, Fairburn & Beglin 2008)"
+    },
+    {
+      "qc_question": "Is the assumed eating disorder prevalence defensible?",
+      "qc_method": "adopted conservative national 12-month ED prevalence of 4.45% (current rather than lifetime)"
+    },
+    {
+      "qc_question": "Does the analytical power calculation agree with a stochastic data-generating process?",
+      "qc_method": "Monte Carlo simulation (10,000 reps) drawing true cases from Binomial(N, 0.0445)"
+    },
+    {
+      "qc_question": "How sensitive is the required sample size to the assumed prevalence and true sensitivity?",
+      "qc_method": "power and total-enrolment curves across prevalence and true-sensitivity grids"
+    },
+    {
+      "qc_question": "Is the adopted test appropriate relative to alternative designs?",
+      "qc_method": "comparison of five approaches (Buderer's formula, binomial simulation, McNemar's test, exact binomial power, correlation CI width)"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "sample size determination",
+      "statistical power analysis",
+      "one-sample exact binomial test",
+      "Monte Carlo power simulation",
+      "diagnostic accuracy precision sizing (Buderer's formula)",
+      "McNemar's paired test",
+      "Fisher z correlation CI width"
+    ],
+    "tools_packages": [],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": null
+  },
+  "provenance": {
+    "indigenous_health": null,
+    "ethics_required": null
+  },
+  "tags": {
+    "asana_tags": [
+      "sample-size",
+      "power-analysis",
+      "eating-disorders",
+      "screening-tool-validation"
+    ],
+    "method_tags": [
+      "exact-binomial-test",
+      "monte-carlo-simulation",
+      "diagnostic-accuracy",
+      "mcnemar-test"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}

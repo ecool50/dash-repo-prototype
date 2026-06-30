@@ -1,0 +1,138 @@
+{
+  "ref_number": "0051",
+  "title": "Meta-analysis of perineural invasion features and patient outcomes in cancer pathology literature",
+  "status": "active",
+  "investigators": {
+    "collaborator": "Dr Ruta Gupta",
+    "lead_data_scientist": "Yue Cao",
+    "analyst_team": [
+      "Jean Yang"
+    ],
+    "research_leader": null
+  },
+  "partners": null,
+  "project_details": {
+    "research_area": [
+      "pathology",
+      "oncology",
+      "systematic review",
+      "meta-analysis",
+      "clinical outcomes"
+    ],
+    "disease": [
+      "cancer"
+    ],
+    "data_modality": [
+      "systematic review literature",
+      "extracted clinical outcome data",
+      "hazard ratios and confidence intervals",
+      "survival outcomes",
+      "radiotherapy outcomes"
+    ],
+    "keywords": [
+      "perineural invasion",
+      "PNI",
+      "survival outcomes",
+      "hazard ratio",
+      "focality",
+      "nerve size",
+      "PNI location",
+      "tumour-nerve distance"
+    ],
+    "platform": {
+      "provider": null
+    },
+    "sample_info": {
+      "sample_type": "published pathology studies",
+      "n_samples": 58,
+      "organism": null
+    }
+  },
+  "analytical_questions": {
+    "primary_question": "Are perineural invasion and its pathological features associated with worse patient outcomes across the cancer pathology literature?",
+    "other_questions": [
+      "Is binary PNI presence versus absence associated with poorer survival outcomes?",
+      "Is multifocal PNI associated with poorer survival outcomes than unifocal PNI?",
+      "Is larger involved nerve size associated with poorer survival outcomes?",
+      "Is extratumoural or peritumoural PNI associated with poorer survival outcomes than intratumoural PNI?",
+      "Is the distance between tumour cells and nerves prognostic in resection specimens?",
+      "Can heterogeneous survival endpoints and effect measures be harmonised into analyzable endpoint groups for meta-analysis?"
+    ]
+  },
+  "qc": [
+    {
+      "qc_question": "Are source papers classified correctly for meta-analysis eligibility?",
+      "qc_method": "paper-level screening of 58 papers into binary PNI comparison, other comparisons, and non-useful papers"
+    },
+    {
+      "qc_question": "Are extracted outcomes consistent with existing review data?",
+      "qc_method": "sanity check of LLM-extracted outcomes against review spreadsheet for OS and DSS across 32 matched titles"
+    },
+    {
+      "qc_question": "Are effect sizes sufficiently complete for quantitative synthesis?",
+      "qc_method": "automatic and manual extraction-status assessment; 21 automatically extracted papers and 14 potentially manually extractable papers"
+    },
+    {
+      "qc_question": "Are heterogeneous endpoints harmonised before meta-analysis?",
+      "qc_method": "primary and secondary endpoint grouping strategy suggested by Professor Hubert Low"
+    },
+    {
+      "qc_question": "Is one suitable analysis selected per paper and endpoint?",
+      "qc_method": "prefer multivariate estimates when available, otherwise use univariate estimates"
+    },
+    {
+      "qc_question": "Are subgroup comparisons eligible and interpretable?",
+      "qc_method": "comparison-specific inclusion/exclusion rules and indirect HR derivation when direct comparisons were unavailable"
+    }
+  ],
+  "analytical_methods": {
+    "primary_methods": [
+      "systematic-review data curation",
+      "LLM-assisted outcome extraction review",
+      "endpoint harmonisation",
+      "hazard-ratio extraction",
+      "manual hazard-ratio calculation from fixed-time survival proportions",
+      "indirect hazard-ratio derivation from shared reference comparisons",
+      "random-effects meta-analysis",
+      "multivariate-prioritised model selection",
+      "forest plot visualisation",
+      "heterogeneity assessment using I-squared"
+    ],
+    "tools_packages": [
+      "readxl",
+      "meta"
+    ],
+    "programming_languages": [
+      "R"
+    ]
+  },
+  "outputs": {
+    "github_repo": null
+  },
+  "provenance": {
+    "indigenous_health": null,
+    "ethics_required": null
+  },
+  "tags": {
+    "asana_tags": [
+      "meta-analysis",
+      "systematic-review",
+      "oncology",
+      "clinical-outcomes"
+    ],
+    "method_tags": [
+      "hazard ratio",
+      "random-effects meta-analysis",
+      "endpoint grouping",
+      "forest plot",
+      "indirect comparison"
+    ]
+  },
+  "access": {
+    "preset": "shared",
+    "discovery": "dash_internal",
+    "summary": "dash_internal",
+    "report_link": "dash_internal",
+    "code_link": "dash_internal"
+  }
+}
