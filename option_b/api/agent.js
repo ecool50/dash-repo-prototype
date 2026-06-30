@@ -63,6 +63,27 @@ function projectLine(m) {
   return parts.join(' | ');
 }
 
+// Deterministic grounding guard. Returns false if the generated answer cites a
+// project ref outside the retrieved set, or quotes a multi-word span that is
+// not traceable to the context we provided (or the user's query). Catches
+// invented projects/titles; it does NOT catch relational misattribution
+// (pairing a real analyst with the wrong real project) — that needs a judge.
+export function verifyGrounded(answer, matches, query) {
+  const refs = new Set(matches.map((m) => String(m.ref_number).toLowerCase()));
+  // 1) Any project-ref-like token must be one of the retrieved refs.
+  for (const tok of answer.match(/\bCPCDASH\d{3,4}\b|\b0\d{3}\b|\bA\d{1,2}\b/gi) || []) {
+    const norm = tok.toLowerCase().replace(/^cpcdash/, '');
+    if (!refs.has(norm) && !refs.has(tok.toLowerCase())) return false;
+  }
+  // 2) Any quoted multi-word span must appear in the grounding text.
+  const grounded = (matches.map(projectLine).join(' ') + ' ' + query).toLowerCase();
+  for (const m of answer.matchAll(/["“]([^"“”]{6,})["”]/g)) {
+    const span = m[1].toLowerCase().trim();
+    if (span.split(/\s+/).length >= 2 && !grounded.includes(span)) return false;
+  }
+  return true;
+}
+
 export async function synthesizeAnswer(query, matches, env) {
   if (!matches || matches.length === 0) {
     return `I could not find any past DASH projects that match "${query}". Try rephrasing or broadening the question.`;
@@ -78,7 +99,9 @@ export async function synthesizeAnswer(query, matches, env) {
       max_tokens: 220,
     });
     const text = r?.response;
-    if (typeof text === 'string' && text.trim()) return text.trim();
+    if (typeof text === 'string' && text.trim() && verifyGrounded(text, matches, query)) {
+      return text.trim();
+    }
   } catch {
     /* fall through to deterministic template */
   }
