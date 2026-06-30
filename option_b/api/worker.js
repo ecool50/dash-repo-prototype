@@ -17,6 +17,10 @@ import { searchProjects, getProject, listProjectRefs } from './search.js';
 import { ingestProject, deleteProject } from './ingest.js';
 import { askAgent } from './ask.js';
 
+// The MongoDB driver + connection live in this Durable Object, not the
+// stateless request path. Must be exported from the Worker entry module.
+export { MongoDO } from './mongo-do.js';
+
 const EMBED_MODEL = '@cf/baai/bge-large-en-v1.5';
 
 export default {

@@ -1,55 +1,34 @@
-// MongoDB client wrapper using the official Node driver, run inside the Worker
-// via Cloudflare's nodejs_compat. Replaces the Atlas Data API path because the
-// Data API has been deprecated by MongoDB.
+// Thin client used by the stateless request Worker. It does NOT hold a Mongo
+// connection; it proxies every operation to the MongoDO Durable Object (see
+// mongo-do.js), which owns the driver and a warm pooled connection. This keeps
+// the heavy driver and its TCP connection out of the per-request isolate, which
+// is what was causing the intermittent Cloudflare 1101 crashes.
 //
-// Required Worker secrets:
-//   ATLAS_URI   mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/?retryWrites=true&w=majority
-
-import { MongoClient } from 'mongodb';
+// The client(env) interface is unchanged, so search.js / ingest.js are not
+// touched.
 
 export const DB = 'dash';
 export const COLL = 'projects';
 
-let cached;
-
-function getDb(env) {
-  if (!cached) {
-    if (!env.ATLAS_URI) throw new Error('ATLAS_URI not set');
-    const mc = new MongoClient(env.ATLAS_URI);
-    cached = mc.connect().then(() => mc.db(DB));
-  }
-  return cached;
+async function call(env, op, coll, args) {
+  const stub = env.MONGO_DO.get(env.MONGO_DO.idFromName('mongo'));
+  const res = await stub.fetch('https://mongo-do/op', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ op, coll, args }),
+  });
+  const data = await res.json().catch(() => ({ error: `mongo DO HTTP ${res.status}` }));
+  if (!res.ok || data.error) throw new Error(data.error || `mongo DO HTTP ${res.status}`);
+  return data.result;
 }
 
 export function client(env) {
   return {
-    async find(_db, coll, filter, opts = {}) {
-      const db = await getDb(env);
-      const cursor = db.collection(coll).find(filter, opts);
-      if (opts.sort) cursor.sort(opts.sort);
-      if (opts.limit) cursor.limit(opts.limit);
-      if (opts.projection) cursor.project(opts.projection);
-      return cursor.toArray();
-    },
-    async findOne(_db, coll, filter, opts = {}) {
-      const db = await getDb(env);
-      return db.collection(coll).findOne(filter, opts);
-    },
-    async insertOne(_db, coll, document) {
-      const db = await getDb(env);
-      return db.collection(coll).insertOne(document);
-    },
-    async updateOne(_db, coll, filter, update, opts = {}) {
-      const db = await getDb(env);
-      return db.collection(coll).updateOne(filter, update, opts);
-    },
-    async deleteOne(_db, coll, filter) {
-      const db = await getDb(env);
-      return db.collection(coll).deleteOne(filter);
-    },
-    async aggregate(_db, coll, pipeline) {
-      const db = await getDb(env);
-      return db.collection(coll).aggregate(pipeline).toArray();
-    },
+    find: (_db, coll, filter, opts = {}) => call(env, 'find', coll, [filter, opts]),
+    findOne: (_db, coll, filter, opts = {}) => call(env, 'findOne', coll, [filter, opts]),
+    insertOne: (_db, coll, document) => call(env, 'insertOne', coll, [document]),
+    updateOne: (_db, coll, filter, update, opts = {}) => call(env, 'updateOne', coll, [filter, update, opts]),
+    deleteOne: (_db, coll, filter) => call(env, 'deleteOne', coll, [filter]),
+    aggregate: (_db, coll, pipeline) => call(env, 'aggregate', coll, [pipeline]),
   };
 }

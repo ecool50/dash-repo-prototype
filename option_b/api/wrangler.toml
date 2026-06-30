@@ -6,6 +6,16 @@ compatibility_flags = ["nodejs_compat"]
 [ai]
 binding = "AI"
 
+# The MongoDB driver + warm connection live in this Durable Object, off the
+# stateless request path, to avoid the per-isolate connection crashes (1101).
+[[durable_objects.bindings]]
+name = "MONGO_DO"
+class_name = "MongoDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["MongoDO"]
+
 # Comma-separated allowlist of origins permitted to call the API from a
 # browser. localhost:5173 is the Vite dev server. Update the first entry
 # when the frontend moves to the DASH-owned Cloudflare account.
