@@ -27,7 +27,7 @@ async function askWithRetry(query, attempts = 4) {
       const response = await fetch(`${API_BASE}/api/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, limit: 4 }),
+        body: JSON.stringify({ query, limit: 8 }),
       });
       if (response.ok) return await response.json();
       lastErr = new Error("The DASH API could not process that search.");
@@ -156,7 +156,7 @@ function DashboardContent() {
                 gap: "20px"
               }}
             >
-              {result.matches.slice(0, 4).map((match) => (
+              {result.matches.slice(0, 8).map((match) => (
                 <article className="result-card" key={match.ref_number}>
                   <div className="card-heading">
                     <FileText size={20} />

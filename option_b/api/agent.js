@@ -47,18 +47,23 @@ export async function planQuery(query, env) {
   }
 }
 
-const SYNTH_SYS = `You are the DASH project-catalogue assistant for a university data-science hub. Given a user's query and the projects retrieved for it, write a concise, helpful answer of 2-3 sentences.
+const SYNTH_SYS = `You are the DASH project-catalogue assistant for a university data-science hub. Given a user's query and the projects retrieved for it, write a brief, factual answer (1-3 sentences).
 Rules:
 - Use ONLY the provided projects. Never invent projects, people, methods, or findings.
-- Refer to projects by their title (and the analyst when relevant). Summarise; do not just list everything mechanically.
-- If the projects only partially match the query, say so honestly.`;
+- Name EVERY project provided, by title (do not omit any), with the analyst/topic when useful. For a person query, give the count.
+- Do NOT editorialize, praise, or speculate: no claims about anyone's expertise, skill, or impact, and nothing about biology or disease beyond what a title literally says.
+- If the projects only partially match the query, say so.
+- Be concise and neutral; no marketing tone.`;
 
 function projectLine(m) {
   const parts = [`[${m.ref_number}] ${m.title}`];
   const inv = m.investigators || {};
-  const lead = inv.lead_data_scientist
-    || (Array.isArray(inv.analyst_team) ? inv.analyst_team[0] : inv.analyst_team);
-  if (lead) parts.push(`analyst: ${lead}`);
+  const people = [
+    inv.lead_data_scientist,
+    Array.isArray(inv.analyst_team) ? inv.analyst_team.join(', ') : inv.analyst_team,
+    inv.collaborator,
+  ].filter(Boolean).join('; ');
+  if (people) parts.push(`people: ${people}`);
   const dis = m.project_details?.disease;
   if (Array.isArray(dis) && dis.length) parts.push(`disease: ${dis.join(', ')}`);
   const mod = m.project_details?.data_modality;
