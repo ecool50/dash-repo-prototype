@@ -20,14 +20,14 @@ const starterText = `Hi - I help you find past DASH work. Ask in your own words.
 // hard-crashes (Cloudflare 1101, no CORS headers) and surfaces as a
 // "Failed to fetch". Attempts are independent, so retry a few times before
 // giving up.
-async function askWithRetry(query, attempts = 4) {
+async function askWithRetry(query, history, attempts = 4) {
   let lastErr;
   for (let i = 0; i < attempts; i += 1) {
     try {
       const response = await fetch(`${API_BASE}/api/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, limit: 8 }),
+        body: JSON.stringify({ query, limit: 8, history }),
       });
       if (response.ok) return await response.json();
       lastErr = new Error("The DASH API could not process that search.");
@@ -63,11 +63,20 @@ function DashboardContent() {
     setError("");
     setLoading(true);
     setQuery("");
+
+    // Prior turns for the agent (skip the starter greeting at index 0).
+    const history = messages.slice(1).map((m) => ({
+      role: m.role === "agent" ? "assistant" : "user",
+      text: m.text,
+    }));
+
     setMessages((items) => [...items, { text: cleanQuery }]);
 
     try {
-      const data = await askWithRetry(cleanQuery);
-      setResult(data);
+      const data = await askWithRetry(cleanQuery, history);
+      // Only replace the cards when the agent actually searched this turn; a
+      // chat or context-only follow-up (searched=false) keeps the current cards.
+      if (data.searched) setResult(data);
       setMessages((items) => [...items, { role: "agent", text: data.answer }]);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
@@ -139,7 +148,7 @@ function DashboardContent() {
 
         {error && <div className="error">{error}</div>}
 
-        {result && (
+        {result && result.matches && result.matches.length > 0 && (
           <section className="results" aria-label="Search results">
             <div className="results-header">
               <div>
