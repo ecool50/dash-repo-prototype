@@ -1,0 +1,24 @@
+{"q": "proteomics work on inflammatory skin conditions", "expect": ["0055"], "type": "topic"}
+{"q": "single-cell RNA-seq in heart failure and cardiomyopathy", "expect": ["0054"], "type": "topic"}
+{"q": "Parkinson's disease spatial transcriptomics aging", "expect": ["0046"], "type": "topic"}
+{"q": "leukaemia single-cell transcriptomics and ketogenic diet", "expect": ["0040"], "type": "topic"}
+{"q": "hepatocellular carcinoma imaging mass cytometry fibroblasts", "expect": ["0037"], "type": "topic"}
+{"q": "eating disorder screening sample size determination", "expect": ["0057"], "type": "topic"}
+{"q": "CAR T-cell histone marks differential enrichment", "expect": ["0076"], "type": "topic"}
+{"q": "perineural invasion cancer survival meta-analysis", "expect": ["0051"], "type": "topic"}
+{"q": "wearable accelerometer self-supervised representation learning", "expect": ["0047"], "type": "topic"}
+{"q": "bulk RNA-seq differential expression NR treatment SARM1", "expect": ["0052"], "type": "topic"}
+{"q": "CUT&RUN peak calling promoter analysis", "expect": ["0042", "0076"], "type": "method"}
+{"q": "scRNA-seq", "expect": ["0054"], "type": "abbrev"}
+{"q": "IMC", "expect": ["0037"], "type": "abbrev"}
+{"q": "Xenium spatial single-cell", "expect": ["0040"], "type": "modality"}
+{"q": "DIA mass spectrometry proteomics", "expect": ["0055"], "type": "modality"}
+{"q": "projects that used Seurat", "expect": ["0040"], "type": "tool"}
+{"q": "DESeq2 differential expression", "expect": ["0052"], "type": "tool"}
+{"q": "what did Elijah Willie work on", "expect": ["0037", "0047", "0055", "0057"], "type": "person"}
+{"q": "projects Yue Cao worked on", "expect": ["0040", "0042", "0051", "0052", "0076"], "type": "person"}
+{"q": "Xiangnan Xu projects", "expect": ["0046", "0047", "0052", "0054"], "type": "person"}
+{"q": "hows it going", "expect": [], "type": "negative"}
+{"q": "microbiome 16S rRNA sequencing gut", "expect": [], "type": "negative"}
+{"q": "GWAS genome-wide association study", "expect": [], "type": "negative"}
+{"q": "asdfghjkl zxcvbnm qwerty nonsense", "expect": [], "type": "negative"}
