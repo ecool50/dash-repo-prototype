@@ -23,4 +23,9 @@ new_sqlite_classes = ["MongoDO"]
 ALLOWED_ORIGIN = "https://dash-frontend.ecool50.workers.dev,http://localhost:5173"
 
 # Secrets (set via `npx wrangler secret put` from this directory):
-#   ATLAS_URI   mongodb+srv://user:pass@cluster.mongodb.net/?retryWrites=true&w=majority
+#   ATLAS_URI        mongodb+srv://user:pass@cluster.mongodb.net/?retryWrites=true&w=majority
+#   GEMINI_API_KEY   Google AI Studio key. If set, /api/ask synthesizes answers
+#                    with Gemini; if unset, it uses the keyless Workers AI path.
+#
+# Optional [vars] override:
+#   GEMINI_MODEL     defaults to gemini-2.5-flash

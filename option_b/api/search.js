@@ -13,6 +13,7 @@
 // public-by-default and access filtering is a Phase 2 addition.
 
 import { client, DB, COLL } from './mongo.js';
+import { expandAbbreviations } from './abbrev.js';
 
 const EMBED_MODEL = '@cf/baai/bge-large-en-v1.5';
 const RERANK_MODEL = '@cf/baai/bge-reranker-base';
@@ -55,10 +56,16 @@ export async function searchProjects(body, env) {
   const hasPeople = Array.isArray(people) && people.length > 0;
 
   let results;
+  let weak = false;
   if (hasQuery || hasPeople) {
     results = [];
     if (hasQuery) {
-      const vec = await embedQuery(query, env);
+      // Expand abbreviations once, then use the expanded text for BOTH the
+      // embedding recall stage and the reranker — otherwise the cross-encoder
+      // re-scores the original acronym (which it also doesn't understand) and
+      // filters out the very matches the expanded embedding just recalled.
+      const expanded = expandAbbreviations(query);
+      const vec = await embedQuery(expanded, env);
       // Overfetch a candidate net from Atlas, then let the reranker score
       // relevance and truncate to the caller's requested limit.
       const overfetch = Math.max(limit * OVERFETCH_FACTOR, MIN_OVERFETCH);
@@ -77,7 +84,9 @@ export async function searchProjects(body, env) {
         { $project: hideVector() },
       ];
       const raw = await client(env).aggregate(DB, COLL, pipeline);
-      results = await rerank(query, raw, env, limit);
+      const reranked = await rerank(expanded, raw, env, limit);
+      results = reranked.results;
+      weak = reranked.weak;
     }
     // Supplement with structured investigator-name matches. The reranker scores
     // a name buried in a sentence ("projects X worked on") too low to surface,
@@ -85,6 +94,9 @@ export async function searchProjects(body, env) {
     // given, otherwise name-like tokens from the raw query.
     const byName = await matchByInvestigator(hasQuery ? query : '', people, env);
     results = mergeByRef(results, byName, limit);
+    // An exact investigator-name match is a confident hit, so the set is no
+    // longer weak once one is present.
+    if (byName.length) weak = false;
   } else {
     results = await client(env).find(DB, COLL, matchFilter, {
       sort: { updated_at: -1 },
@@ -100,7 +112,7 @@ export async function searchProjects(body, env) {
     n_results: results.length,
   }).catch(() => {});
 
-  return { results };
+  return { results, weak };
 }
 
 // All ref_numbers currently in the collection. Used by the catalog-sync CI
@@ -123,8 +135,11 @@ export async function getProject(id, env) {
 // query/passage relevance and drops anything below RERANK_FLOOR. Replaces
 // the old cosine floor + relative-gap heuristic. Sets `score` to the [0,1]
 // relevance probability; keeps `vector_score` for debugging.
+// Returns { results, weak }. `weak` is true when nothing cleared the strong
+// floor and the results are rescue-tier only — the caller (agent) uses it to
+// frame the answer honestly instead of presenting weak matches as confident.
 async function rerank(query, rows, env, limit) {
-  if (!rows || rows.length === 0) return [];
+  if (!rows || rows.length === 0) return { results: [], weak: false };
   const contexts = rows.map((r) => ({ text: r.embedding?.source_text || r.title || '' }));
   const rr = await env.AI.run(RERANK_MODEL, { query, contexts, top_k: rows.length });
   // bge-reranker-base on Workers AI returns relevance already in [0,1], sorted desc.
@@ -132,10 +147,15 @@ async function rerank(query, rows, env, limit) {
     .map((item) => ({ row: rows[item.id], score: item.score }))
     .filter((x) => x.row);
   // Primary: keep strong matches. If none clear the strong floor, rescue the
-  // weaker-but-clearly-relevant ones rather than returning nothing.
+  // weaker-but-clearly-relevant ones rather than returning nothing, and flag
+  // the set as weak.
   let kept = ranked.filter((x) => x.score >= RERANK_FLOOR);
-  if (kept.length === 0) kept = ranked.filter((x) => x.score >= RESCUE_FLOOR);
-  return kept.slice(0, limit).map((x) => ({ ...x.row, score: x.score }));
+  let weak = false;
+  if (kept.length === 0) {
+    kept = ranked.filter((x) => x.score >= RESCUE_FLOOR);
+    weak = kept.length > 0;
+  }
+  return { results: kept.slice(0, limit).map((x) => ({ ...x.row, score: x.score })), weak };
 }
 
 // Query words stripped before matching against investigator names, so generic
