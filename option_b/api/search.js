@@ -50,13 +50,19 @@ const OVERFETCH_FACTOR = 4;
 const MIN_OVERFETCH = 20;
 
 export async function searchProjects(body, env) {
-  const { query, filters = {}, limit = 10, people } = body || {};
+  // `query` is the topical phrase (the agent planner rewrites the user's words
+  // into it). `raw` is the user's original text, when the caller has it: the
+  // planner paraphrases a package name out of the topic ("which projects used
+  // Seurat?" -> "single-cell analysis"), so the tool lookup must see the raw
+  // text or it never sees the tool name at all.
+  const { query, filters = {}, limit = 10, people, raw } = body || {};
   const matchFilter = buildFilters(filters);
   const hasQuery = typeof query === 'string' && query.trim().length > 0;
   const hasPeople = Array.isArray(people) && people.length > 0;
 
   let results;
   let weak = false;
+  let toolHits = [];
   if (hasQuery || hasPeople) {
     results = [];
     if (hasQuery) {
@@ -97,6 +103,20 @@ export async function searchProjects(body, env) {
     // An exact investigator-name match is a confident hit, so the set is no
     // longer weak once one is present.
     if (byName.length) weak = false;
+
+    // Same idea for a named tool/package, which the embedding stage misses.
+    const toolText = (typeof raw === 'string' && raw.trim()) ? raw : (hasQuery ? query : '');
+    if (toolText) {
+      const byTool = await matchByTool(toolText, env);
+      results = mergeByRef(results, byTool, limit);
+      if (byTool.length) weak = false;
+      // Which tool the query named, and exactly which projects list it. This is
+      // set membership we have already computed exactly; the answer model is a
+      // poor judge of it (asked for the projects using Seurat it will name one
+      // of two, and miscount), so we hand it the resolved fact rather than
+      // asking it to re-derive one. See toolFacts() in agent.js.
+      toolHits = toolMatchDetail(toolText, byTool);
+    }
   } else {
     results = await client(env).find(DB, COLL, matchFilter, {
       sort: { updated_at: -1 },
@@ -112,7 +132,24 @@ export async function searchProjects(body, env) {
     n_results: results.length,
   }).catch(() => {});
 
-  return { results, weak };
+  return { results, weak, toolHits };
+}
+
+// For each tool the query named, the projects that actually list it, resolved
+// against the stored field rather than left to the model:
+//   [{ tool: 'Seurat', refs: ['0040', '0046'] }]
+// Only tools that the caller's text named AND some project lists appear here.
+function toolMatchDetail(text, docs) {
+  const tokens = new Set((String(text).toLowerCase().match(/[a-z][a-z0-9.-]{2,}/g) || []));
+  const byTool = new Map();
+  for (const d of docs) {
+    for (const tool of d.analytical_methods?.tools_packages || []) {
+      if (!tokens.has(String(tool).toLowerCase())) continue;
+      if (!byTool.has(tool)) byTool.set(tool, []);
+      byTool.get(tool).push(d.ref_number);
+    }
+  }
+  return [...byTool.entries()].map(([tool, refs]) => ({ tool, refs }));
 }
 
 // All ref_numbers currently in the collection. Used by the catalog-sync CI
@@ -197,6 +234,31 @@ async function matchByInvestigator(query, people, env) {
       const rx = { $regex: `\\b${t}`, $options: 'i' };
       for (const f of fields) ors.push({ [f]: rx });
     }
+    return await client(env).find(DB, COLL, { $or: ors }, { projection: hideVector(), limit: 10 });
+  } catch {
+    return [];
+  }
+}
+
+// Find projects that list a named tool/package from the query ("which projects
+// used Seurat?", "anything with limma?"). Embeddings represent a package name
+// poorly, so the vector stage misses these even though the field is indexed and
+// exact: Seurat is on two projects but recalls only one.
+//
+// Matches a query token against a tool name in FULL (^token$), never as a
+// prefix, so ordinary words cannot collide with a package: "single" matches no
+// tool, while "seurat" matches exactly. Resilient: [] on any error.
+async function matchByTool(query, env) {
+  try {
+    const tokens = [...new Set((String(query || '').toLowerCase().match(/[a-z][a-z0-9.-]{2,}/g) || [])
+      .filter((t) => !NAME_STOPWORDS.has(t)))];
+    if (!tokens.length) return [];
+    const ors = tokens.map((t) => ({
+      'analytical_methods.tools_packages': {
+        $regex: `^${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
+        $options: 'i',
+      },
+    }));
     return await client(env).find(DB, COLL, { $or: ors }, { projection: hideVector(), limit: 10 });
   } catch {
     return [];

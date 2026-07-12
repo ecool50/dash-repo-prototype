@@ -41,10 +41,18 @@ export async function askStream(body, env, emit) {
     ? plan.topic.trim()
     : (plan.people.length ? '' : clean);
 
-  const searchResult = await searchProjects({ query: topic, limit, people: plan.people }, env);
+  // `raw` carries the user's own words through to the structured tool lookup,
+  // which the planner's topic rewrite would otherwise strip the tool name out of.
+  const searchResult = await searchProjects({ query: topic, limit, people: plan.people, raw: clean }, env);
   const matches = searchResult.results || [];
 
   // Cards appear as soon as the search returns, before the answer streams.
   await emit({ type: 'matches', matches, searched: true });
-  await streamSynthesize(clean, matches, env, { weak: !!searchResult.weak, history }, emit);
+  await streamSynthesize(
+    clean,
+    matches,
+    env,
+    { weak: !!searchResult.weak, history, toolHits: searchResult.toolHits },
+    emit,
+  );
 }
