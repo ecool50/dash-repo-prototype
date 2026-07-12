@@ -15,7 +15,7 @@
 
 import { searchProjects, getProject, listProjectRefs } from './search.js';
 import { ingestProject, deleteProject } from './ingest.js';
-import { askAgent } from './ask.js';
+import { askStream } from './ask.js';
 
 // The MongoDB driver + connection live in this Durable Object, not the
 // stateless request path. Must be exported from the Worker entry module.
@@ -44,7 +44,7 @@ export default {
       }
       if (req.method === 'POST' && path === '/api/ask') {
         const body = await req.json();
-        return json(await askAgent(body, env), 200, cors);
+        return streamAsk(body, env, cors);
       }
       if (req.method === 'GET' && path === '/api/projects') {
         return json(await listProjectRefs(env), 200, cors);
@@ -99,5 +99,32 @@ function json(payload, status, cors) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: { 'content-type': 'application/json', ...cors },
+  });
+}
+
+// Streams /api/ask as newline-delimited JSON (NDJSON): one event object per
+// line — { type: 'matches' | 'token' | 'done' | 'error', ... }. The body stays
+// open while askStream produces events, so the answer streams token-by-token
+// and the matched cards arrive the moment the search tool returns.
+function streamAsk(body, env, cors) {
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const enc = new TextEncoder();
+  const emit = (obj) => writer.write(enc.encode(JSON.stringify(obj) + '\n'));
+
+  (async () => {
+    try {
+      await askStream(body, env, emit);
+    } catch (e) {
+      await emit({ type: 'error', error: String(e?.message || e) });
+    } finally {
+      try { await emit({ type: 'done' }); } catch { /* stream already closed */ }
+      await writer.close();
+    }
+  })();
+
+  return new Response(readable, {
+    status: 200,
+    headers: { ...cors, 'content-type': 'application/x-ndjson', 'cache-control': 'no-store' },
   });
 }

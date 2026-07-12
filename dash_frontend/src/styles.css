@@ -1,4 +1,12 @@
 :root {
+  /* University of Sydney brand palette (Masterbrand + accents). */
+  --usyd-ochre: #E64626;
+  --usyd-ochre-dark: #C63A1E;
+  --usyd-charcoal: #424242;
+  --usyd-navy: #1B355E;
+  --usyd-grey: #F1F1F1;
+  --usyd-grey-light: #E6E7E9;
+
   color: #172033;
   background: #f4f6f8;
   font-family:
@@ -37,17 +45,63 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.topbar {
+  justify-content: center;
+  border: 1px solid var(--usyd-ochre);
+  border-bottom: 4px solid var(--usyd-navy);
+  border-radius: 8px;
+  padding: 20px 20px;
+  background: var(--usyd-ochre);
+  text-align: center;
+  box-shadow: 0 14px 30px rgba(33, 48, 68, 0.08);
+}
+
+.topbar>div {
+  max-width: 920px;
+}
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Official logo (if public/usyd-logo.svg is present). Hidden via onError when
+   the asset is absent, leaving the wordmark below as the fallback. */
+.masthead-logo {
+  height: 40px;
+  width: auto;
+  margin-bottom: 8px;
+}
+
+.masthead-brand {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  opacity: 0.82;
+}
+
+.topbar h1 {
+  font-size: clamp(1.3rem, 2.2vw, 1.5rem);
+  line-height: 1.18;
+  color: #ffffff;
 }
 
 .eyebrow {
   margin: 0 0 4px;
-  color: #496071;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
+  color: var(--usyd-ochre);
 }
 
 h1,
@@ -84,13 +138,14 @@ h2 {
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
   gap: 18px;
 }
 
 .chat-panel,
 .side-panel,
 .results {
-  border: 1px solid #d7dee6;
+  border: 1px solid #E6E7E9;
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 14px 30px rgba(33, 48, 68, 0.08);
@@ -98,8 +153,21 @@ h2 {
 
 .chat-panel {
   display: flex;
+  height: clamp(250px, calc(100vh - 190px), 300px);
   min-height: 520px;
   flex-direction: column;
+}
+
+.chat-panel-header {
+  border-bottom: 1px solid #E6E7E9;
+  padding: 16px 20px 12px;
+  background: #E6E7E9;
+
+  text-align: left;
+}
+
+.chat-panel-header .eyebrow {
+  margin: 0;
 }
 
 .messages {
@@ -107,7 +175,9 @@ h2 {
   flex: 1;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
   padding: 20px;
+  overscroll-behavior: contain;
   overflow-y: auto;
 }
 
@@ -120,14 +190,14 @@ h2 {
 
 .message.agent {
   align-self: flex-start;
-  background: #eef4f8;
+  background: #E6E7E957;
   color: #172033;
 }
 
 .message.user {
   align-self: flex-end;
-  background: #195d70;
-  color: #ffffff;
+  background: #FCEDE2;
+  color: #000000;
 }
 
 .message.pending {
@@ -167,9 +237,13 @@ h2 {
   place-items: center;
   border: 0;
   border-radius: 8px;
-  background: #195d70;
+  background: var(--usyd-ochre);
   color: #ffffff;
   cursor: pointer;
+}
+
+.composer button:hover:not(:disabled) {
+  background: var(--usyd-ochre-dark);
 }
 
 .composer button:disabled {
@@ -194,7 +268,7 @@ h2 {
   border-radius: 8px;
   padding: 12px;
   background: #f8fafc;
-  color: #243447;
+  color: #000000;
   cursor: pointer;
   line-height: 1.35;
   text-align: left;
@@ -202,7 +276,7 @@ h2 {
 
 .suggestions button:hover,
 .download:hover {
-  border-color: #195d70;
+  border-color: #E64626;
 }
 
 .error {
@@ -242,7 +316,7 @@ h2 {
 
 .card-heading p {
   margin: 0 0 3px;
-  color: #496071;
+  color: #E64626;
   font-size: 0.78rem;
   font-weight: 800;
 }
@@ -256,7 +330,7 @@ h2 {
   border-radius: 8px;
   padding: 4px 7px;
   background: #e6f1f2;
-  color: #195d70;
+  color: #E64626;
   font-weight: 800;
 }
 
@@ -294,10 +368,13 @@ dd {
     padding: 14px;
   }
 
-  .topbar,
   .results-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .topbar {
+    padding: 22px 16px;
   }
 
   .content-grid {
@@ -305,6 +382,7 @@ dd {
   }
 
   .chat-panel {
+    height: min(70vh, 560px);
     min-height: 460px;
   }
 
@@ -337,13 +415,13 @@ dd {
 }
 
 .btn-primary {
-  background-color: #0f172a;
+  background-color: var(--usyd-charcoal);
   color: #ffffff;
   border: 1px solid transparent;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #1e293b;
+  background-color: #2b2b2b;
 }
 
 .btn-primary:disabled {
@@ -352,13 +430,13 @@ dd {
 }
 
 .btn-secondary {
-  background-color: #f1f5f9;
-  color: #334155;
-  border: 1px solid #cbd5e1;
+  background-color: #E64626;
+  color: #ffffff;
+  border: 1px solid #E64626;
 }
 
 .btn-secondary:hover {
-  background-color: #e2e8f0;
+  background-color: #C63A1E;
 }
 
 .score-badge {
@@ -397,7 +475,7 @@ dd {
   right: -460px;
   width: 440px;
   height: 100vh;
-  background-color: #ffffff;
+  background-color: #f0f5f4;
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
   transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -410,7 +488,7 @@ dd {
 
 .drawer-header {
   padding: 24px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #E64626;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;

@@ -1,64 +1,50 @@
 // Ask pipeline for POST /api/ask — the conversational agent surface.
 //
-// Primary path: a tool-using agent (agent-loop.js, Gemini function calling)
-// that decides each turn whether to search, fetch a project, or just reply —
-// so follow-ups and chit-chat don't hit the database.
+// Single-pass, keyless, streamed:
+//   1. planQuery (Workers AI) routes the turn: chit-chat vs a real search, and
+//      extracts topic + people. Cheap (~0.5-1s); no answer round-trip.
+//   2. chit-chat -> stream a warm reply (no DB hit, no cards).
+//   3. otherwise -> search, emit the matched cards, then stream ONE grounded
+//      answer over them.
 //
-// Fallback path (no GEMINI_API_KEY, or the agent loop errors/aborts): the
-// deterministic plan -> search -> synth pipeline below, which always works and
-// is keyless. Every LLM step there also degrades gracefully.
+// askStream(body, env, emit) drives events; the worker wraps `emit` into an
+// NDJSON response body. Event types: 'matches', 'token' (the worker appends a
+// trailing 'done', and 'error' on a hard failure).
 //
-// Request:  { query, limit?, history? }   history = [{ role, text }, ...]
-// Response: { answer, matches, searched }  searched=false on chat/context turns
-//           so the frontend keeps the current cards instead of clearing them.
+// Request: { query, limit?, history? }, history = [{ role, text }, ...] of the
+// prior turns, so a follow-up resolves against the conversation rather than
+// being searched literally.
 
 import { searchProjects } from './search.js';
-import { planQuery, synthesizeAnswer, converseAnswer } from './agent.js';
-import { agentLoop } from './agent-loop.js';
+import { planQuery, streamSynthesize, streamConverse } from './agent.js';
 
-export async function askAgent(body, env) {
-  const { query, limit = 5, history = [] } = body || {};
+export async function askStream(body, env, emit) {
+  const { query, limit = 8, history = [] } = body || {};
+  const clean = typeof query === 'string' ? query.trim() : '';
 
-  if (!query || typeof query !== 'string' || !query.trim()) {
-    return {
-      answer: 'Please type a question or describe what you are looking for.',
-      matches: [],
-      searched: false,
-    };
+  if (!clean) {
+    await emit({ type: 'token', text: 'Please type a question or describe what you are looking for.' });
+    return;
   }
 
-  const trimmed = query.trim();
+  const plan = await planQuery(clean, env, history);
 
-  // Primary: the tool-using agent. Returns null on any failure so we fall back.
-  if (env.GEMINI_API_KEY) {
-    try {
-      const result = await agentLoop(trimmed, history, env);
-      if (result) return result;
-    } catch {
-      /* fall through to the deterministic pipeline */
-    }
-  }
-
-  return pipelineAnswer(trimmed, env, limit);
-}
-
-// Deterministic plan -> search -> synth pipeline. Single-turn (no history);
-// used when Gemini is unavailable or the agent loop bails.
-async function pipelineAnswer(trimmed, env, limit) {
-  const plan = await planQuery(trimmed, env);
-
-  // Conversational, non-search input: reply warmly, no cards, no DB hit.
+  // Conversational, non-search input: stream a warm reply, no cards, no DB hit.
+  // (searched stays implicit-false — no 'matches' event — so the UI keeps the
+  // current cards.)
   if (plan.intent === 'chitchat' && !plan.people.length && !(plan.topic && plan.topic.trim())) {
-    return { answer: await converseAnswer(trimmed, env), matches: [], searched: false };
+    await streamConverse(clean, env, emit, history);
+    return;
   }
 
   const topic = plan.topic && plan.topic.trim()
     ? plan.topic.trim()
-    : (plan.people.length ? '' : trimmed);
+    : (plan.people.length ? '' : clean);
 
   const searchResult = await searchProjects({ query: topic, limit, people: plan.people }, env);
   const matches = searchResult.results || [];
-  const answer = await synthesizeAnswer(trimmed, matches, env, { weak: !!searchResult.weak });
 
-  return { answer, matches, searched: true };
+  // Cards appear as soon as the search returns, before the answer streams.
+  await emit({ type: 'matches', matches, searched: true });
+  await streamSynthesize(clean, matches, env, { weak: !!searchResult.weak, history }, emit);
 }
