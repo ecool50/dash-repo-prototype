@@ -47,9 +47,9 @@ export default {
         const body = await req.json();
         return streamAsk(body, env, cors);
       }
-      // TEMPORARY (WS1 validation): classify a query and return the raw intent,
-      // with no execution. Used by the paraphrase-consistency eval to measure
-      // routing quality in isolation. Remove once the router is wired + trusted.
+      // Router eval hook: classify a query and return the raw intent, with no
+      // execution. Lets the paraphrase-consistency bank measure routing quality
+      // in isolation (a standing guardrail against model/prompt drift). Read-only.
       if (req.method === 'POST' && path === '/api/route') {
         const { query, history = [] } = await req.json();
         if (!hasRouter(env)) return json({ error: 'no router (env.AI missing)' }, 200, cors);

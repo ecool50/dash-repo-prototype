@@ -165,6 +165,40 @@ Open questions for review:
 To change the taxonomy, edit `DATA_TYPES` in `catalogue.js` (each entry has
 `match` substrings for the stored field and `query` synonyms for user phrasing).
 
+## Related: WS1 route/execute cascade (the LLM router)
+
+The regex `classifyCatalogue` is phrasing-brittle: "list all transcriptomics
+projects" hit the exact path but "retrieve the transcriptomics projects" fell
+through to semantic search and returned an incomplete set. The fix keeps the
+deterministic executors but moves ROUTING to a model, so equivalent phrasings
+route the same. Split: the model classifies INTENT (it never counts or lists,
+so it cannot fabricate a number); deterministic code executes.
+
+`ask.js` is the dispatcher, in a cascade:
+1. `classifyCatalogue` (regex) — instant fast path for the clear cases.
+2. On a miss, `router.js` — an LLM intent router on **keyless Cloudflare Workers
+   AI** (`@cf/meta/llama-3.1-8b-instruct-fast`, JSON-schema constrained output,
+   `data_type` enum-locked to the taxonomy). Gemini was rejected: its free tier
+   rate-limits to unusability, and it costs the keyless/governance property. It
+   stays a one-line swap if a paid key is ever added.
+3. `guardIntent` cross-checks the router: a claimed `data_type`/`facet`/`value`
+   the query doesn't support downgrades to semantic search (never a wrong
+   authoritative count), and a missing `data_type` is recovered from the query
+   text (handles negated queries the 8B under-fills).
+4. Still nothing -> the legacy planner splits chitchat vs a topical search.
+
+Executors: `runCatalogue` (total / list / breakdown / category, plus **count_by_value**
+for "how many use Seurat" and **negated category** for the complement) and
+**categoryRanked** in `search.js` (filter to the complete typed set, order by the
+qualifier) for "transcriptomics work on atopic dermatitis". Numbers still come
+only from the DB. `POST /api/route` returns the raw intent (no execution) as a
+standing router-quality eval hook.
+
+Live-verified end to end. Known limitation (pre-existing, not from this change):
+disease-named semantic queries under-recall ("who worked on the leukaemia
+project"), because `searchProjects` structured-matches tools and investigators
+but not diseases; a `matchByDisease` mirroring `matchByTool` would close it.
+
 ## Related: WS3 grounding guard + history de-poisoning
 
 The semantic synthesis answer (`agent.js streamSynthesize`) is where the agent
