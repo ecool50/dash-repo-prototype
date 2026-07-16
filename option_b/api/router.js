@@ -19,10 +19,12 @@
 
 import { CANONICAL_DATA_TYPES } from './catalogue.js';
 
-// 70B for routing quality; it only runs on the regex-miss tail, so its higher
-// latency lands on uncommon queries. Swap to '@cf/meta/llama-3.1-8b-instruct-fast'
-// via env.ROUTER_MODEL if tail latency matters, or to a newer catalogue model.
-const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+// 8B-fast: routing is an easy, enum-constrained classification task, so the fast
+// small model handles it — and it must, on latency. The 70B model routed
+// correctly too but ran ~6s warm / ~57s cold on Workers AI, unusable even on the
+// tail. Override via env.ROUTER_MODEL to trial a larger model if the eval shows
+// 8B mis-routing tricky paraphrases.
+const MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 
 const INTENTS = ['count_total', 'list_all', 'breakdown', 'category',
   'count_by_value', 'semantic', 'person', 'chitchat'];
