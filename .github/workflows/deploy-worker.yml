@@ -32,6 +32,12 @@ jobs:
         working-directory: option_b
         run: npm ci
 
+      # Pre-deploy gate: deterministic routing / guard / executor checks against
+      # a fixture (no network, no model). A red gate blocks the deploy. Every
+      # production misroute is locked in as a case in eval/cases.mjs.
+      - name: Offline routing gate
+        run: node option_b/api/eval/offline.mjs
+
       - name: Deploy with Wrangler
         uses: cloudflare/wrangler-action@v3
         with:

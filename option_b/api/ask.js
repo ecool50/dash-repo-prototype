@@ -53,7 +53,8 @@ export async function askStream(body, env, emit) {
 
 // Map the regex classifier's {kind} onto the unified intent shape the dispatcher
 // consumes. Returns null when the regex did not match (fall through to the LLM).
-function regexIntent(cat) {
+// Exported for the offline eval gate.
+export function regexIntent(cat) {
   if (!cat) return null;
   switch (cat.kind) {
     case 'total': return { intent: 'count_total' };
@@ -69,7 +70,8 @@ function regexIntent(cat) {
 // distrust it and downgrade to semantic search (the safe default that never
 // returns a wrong authoritative count). This is what stops a router mis-route
 // ("how many projects on diabetes" -> category/clinical_meta) from surfacing.
-function guardIntent(intent, clean) {
+// Exported for the offline eval gate (the guard-invariant tests).
+export function guardIntent(intent, clean) {
   if (!intent) return null;
   const toSemantic = () => ({ intent: 'semantic', topic: clean, people: intent.people || [] });
   switch (intent.intent) {

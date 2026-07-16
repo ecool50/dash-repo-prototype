@@ -199,6 +199,39 @@ disease-named semantic queries under-recall ("who worked on the leukaemia
 project"), because `searchProjects` structured-matches tools and investigators
 but not diseases; a `matchByDisease` mirroring `matchByTool` would close it.
 
+### Guard invariants (`guardIntent`)
+
+The small router occasionally mislabels a query. Every structured intent has a
+deterministic precondition; if it fails, the intent DOWNGRADES to semantic search
+(which shows results and lets the user judge) rather than emit a confidently
+wrong authoritative answer. The complete set:
+
+| Intent | Precondition | On failure |
+| --- | --- | --- |
+| `category` | the named `data_type` synonym actually appears in the query | downgrade to semantic |
+| `category` (empty data_type) | exactly one data type is named in the query text | recover that type; else semantic |
+| `count_by_value` | a `value` is present and `facet` in {tool, disease, method} | downgrade to semantic |
+| `breakdown` | `facet` valid AND a grouping cue in the query ("by", "per", "distribution", "summarise", ...) | downgrade to semantic |
+| `person` | at least one name in `people` | downgrade to semantic |
+
+The regex fast path is trusted (it only fires on structurally unambiguous
+queries); these guards apply to the LLM router's output. New misroutes get a new
+row here and a locked case in `eval/cases.mjs`.
+
+### The eval gate (diligence)
+
+Routing is probabilistic, so correctness is enforced by evals, not hope:
+
+- **`eval/offline.mjs`** — deterministic pre-deploy gate (classifier never
+  mis-fires, guard invariants hold, executor counts are exact), run against
+  `eval/fixtures.json` with no network or model. **Wired into CI** (`deploy-worker.yml`):
+  a red gate blocks the deploy.
+- **`eval/live.mjs`** — post-deploy check of router quality (`/api/route`) and
+  full cascade behaviour (`/api/ask`) against the deployed Worker.
+- **`eval/cases.mjs`** — the shared corpus. Every production misroute we have
+  found is a locked case (marked `bug`); `knownGap` cases are reported but do not
+  gate. Growing this corpus is how the system gets more reliable over time.
+
 ## Related: WS3 grounding guard + history de-poisoning
 
 The semantic synthesis answer (`agent.js streamSynthesize`) is where the agent
