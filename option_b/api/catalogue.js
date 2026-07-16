@@ -154,6 +154,12 @@ const DATA_TYPES = [
   },
 ];
 
+// The canonical type slugs, exported as the single source of truth for the LLM
+// router's data_type enum (router.js). Keeping the enum derived from the same
+// taxonomy the executor uses means the router can never emit a type the
+// executor doesn't understand.
+export const CANONICAL_DATA_TYPES = DATA_TYPES.map((t) => t.canonical);
+
 // The stored fields each facet groups on. Kept here so the pipeline and the
 // classifier agree on one source of truth.
 const FACET_FIELD = {
@@ -194,7 +200,11 @@ export function classifyCatalogue(text) {
 
   const mentionsProjects = /\b(projects?|studies|study|analyses|work|entries|catalogue|catalog|database|repo(?:sitory)?|everything)\b/.test(q);
   const aggregateVerb = /\b(how many|number of|count|counts|breakdown|break down|distribution|summar(?:y|ise|ize)|group(?:ed)? by|grouped|per|tally|split)\b/.test(q);
-  const enumerateVerb = /\b(list|show|give me|what|which|display|enumerate|name|any)\b/.test(q);
+  // Enumerate verbs include retrieval verbs (retrieve/find/get/...) so that
+  // "retrieve the transcriptomics projects" routes to the SAME structured path as
+  // "list all transcriptomics projects" and returns the complete set (4), instead
+  // of falling through to semantic search, which recalls only the 2 obvious ones.
+  const enumerateVerb = /\b(list|show|give me|give|retrieve|find|fetch|get|pull|bring|what|which|display|enumerate|name|any)\b/.test(q);
 
   // --- group: an aggregate verb + an explicit facet keyword ---
   // Also fires when the facet noun is itself the thing being enumerated ("which
@@ -259,6 +269,7 @@ const CATALOGUE_FILLER = new Set([
 ]);
 const TOTAL_WORDS = new Set([]);
 const LIST_WORDS = new Set(['list', 'show', 'give', 'display', 'name', 'see', 'view',
+  'retrieve', 'find', 'fetch', 'get', 'pull', 'bring',
   'all', 'every', 'each', 'everything', 'out']);
 
 function isBareCatalogueQuery(q, extra) {
@@ -285,10 +296,11 @@ function detectAllDataTypes(q) {
   return DATA_TYPES.filter((t) => t.query.some((syn) => q.includes(syn)));
 }
 
-// Enumerate/count verbs allowed inside a bare type query.
+// Enumerate/count/retrieval verbs allowed inside a bare type query.
 const ENUMERATE_WORDS = new Set([
   'list', 'show', 'give', 'me', 'what', 'which', 'display', 'enumerate', 'name',
   'any', 'see', 'view', 'how', 'many',
+  'retrieve', 'find', 'fetch', 'get', 'pull', 'bring',
 ]);
 // Connector words that may legitimately appear in "list all X projects" without
 // making it a qualified/filtered request.

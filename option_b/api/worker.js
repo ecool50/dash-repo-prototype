@@ -16,6 +16,7 @@
 import { searchProjects, getProject, listProjectRefs } from './search.js';
 import { ingestProject, deleteProject } from './ingest.js';
 import { askStream } from './ask.js';
+import { routeIntent, hasRouter } from './router.js';
 
 // The MongoDB driver + connection live in this Durable Object, not the
 // stateless request path. Must be exported from the Worker entry module.
@@ -45,6 +46,18 @@ export default {
       if (req.method === 'POST' && path === '/api/ask') {
         const body = await req.json();
         return streamAsk(body, env, cors);
+      }
+      // TEMPORARY (WS1 validation): classify a query and return the raw intent,
+      // with no execution. Used by the paraphrase-consistency eval to measure
+      // routing quality in isolation. Remove once the router is wired + trusted.
+      if (req.method === 'POST' && path === '/api/route') {
+        const { query, history = [] } = await req.json();
+        if (!hasRouter(env)) return json({ error: 'no router (env.AI missing)' }, 200, cors);
+        try {
+          return json({ intent: await routeIntent(String(query || ''), history, env) }, 200, cors);
+        } catch (e) {
+          return json({ error: String(e?.message || e) }, 200, cors);
+        }
       }
       if (req.method === 'GET' && path === '/api/projects') {
         return json(await listProjectRefs(env), 200, cors);

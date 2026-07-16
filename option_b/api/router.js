@@ -1,0 +1,130 @@
+// router.js — the LLM intent ROUTER (WS1), on keyless Cloudflare Workers AI.
+// The model classifies the query into a structured intent; deterministic code
+// (ask.js dispatcher + catalogue.js / search.js executors) produces every
+// answer. The router NEVER counts, lists, or answers: its output schema has no
+// count/list/answer field, so a fabricated number is structurally impossible
+// here, exactly as in WS2.
+//
+// Why Workers AI, not Gemini: routing is an easy, constrained-output
+// classification task, so a free Workers AI model handles it — and it stays
+// keyless (no external vendor, project text never leaves for a third party) and
+// has no per-minute rate-limit cliff. Gemini remains a one-line swap if a paid
+// key is ever provisioned.
+//
+// Cascade (see ask.js): the deterministic regex `classifyCatalogue` runs FIRST
+// as a fast path (instant, no model). This router is called only when the regex
+// returns null — the phrasing tail it cannot catch ("retrieve the transcriptomics
+// projects", "what've you got on RNA-seq"). If the model errors, ask.js falls
+// back to today's semantic path, so the system never regresses.
+
+import { CANONICAL_DATA_TYPES } from './catalogue.js';
+
+// 70B for routing quality; it only runs on the regex-miss tail, so its higher
+// latency lands on uncommon queries. Swap to '@cf/meta/llama-3.1-8b-instruct-fast'
+// via env.ROUTER_MODEL if tail latency matters, or to a newer catalogue model.
+const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+
+const INTENTS = ['count_total', 'list_all', 'breakdown', 'category',
+  'count_by_value', 'semantic', 'person', 'chitchat'];
+const FACETS = ['data_type', 'disease', 'tool', 'method'];
+
+// Workers AI takes a standard JSON schema (lowercase types) in response_format.
+// data_type is enum-locked to the canonical taxonomy (imported — one source of
+// truth), so the model maps surface terms (RNA-seq, Xenium, scRNA) onto a
+// canonical value by meaning, which fixes the substring-recall gap.
+function intentSchema() {
+  return {
+    type: 'object',
+    properties: {
+      intent: { type: 'string', enum: INTENTS },
+      data_type: { type: 'string', enum: [...CANONICAL_DATA_TYPES, 'none'] },
+      facet: { type: 'string', enum: [...FACETS, 'none'] },
+      value: { type: 'string' },
+      qualifiers: { type: 'array', items: { type: 'string' } },
+      negated: { type: 'boolean' },
+      people: { type: 'array', items: { type: 'string' } },
+      topic: { type: 'string' },
+    },
+    required: ['intent', 'data_type', 'facet', 'value', 'qualifiers', 'negated', 'people', 'topic'],
+  };
+}
+
+const SYS = `You are the intent ROUTER for a search assistant over a catalogue of past biomedical data-science projects. Classify the query into ONE intent and extract parameters. Output JSON only, matching the schema. You NEVER answer, count, or list projects yourself — you only classify.
+
+Intents:
+- count_total: how many projects there are IN TOTAL ("how many projects", "what's in the catalogue", "total number of studies").
+- list_all: enumerate EVERY project ("list all projects", "show me everything").
+- breakdown: counts grouped BY a facet ("summarise by data type", "break down by disease", "which tools are used"); set facet.
+- category: the projects OF a named data type, in ANY phrasing — list/retrieve/find/show/get/pull/"what've you got on". Set data_type. Map surface terms to the enum by MEANING: RNA-seq / single-cell RNA / scRNA / Xenium / spatial transcriptomics / gene expression -> transcriptomics; mass spec / DIA / proteomic -> proteomics; CUT&RUN / histone / ChIP / chromatin -> epigenomics; imaging mass cytometry / multiplexed imaging -> imaging; systematic review / survival / clinical outcomes -> clinical_meta; wearable / accelerometer / sensor -> wearable_sensor; sample size / power analysis / biostatistics / study design -> study_design.
+- count_by_value: ONLY when the user asks HOW MANY / the COUNT of projects using a specific tool, disease, or method ("how many projects use Seurat", "how many leukaemia projects are there"). Set facet (tool|disease|method) and value. If the user is NOT asking for a count, do NOT use this intent.
+- person: search by an investigator/analyst NAME the user gives ("projects by Jean Yang", "what did Xiangnan work on"). Set people.
+- semantic: a fuzzy topical search that is not one of the above. This INCLUDES "WHO worked on / who ran / who led <a project described by topic or disease>" (there is no name to search, so find the project topically). If the query names a data type AND an extra constraint ("transcriptomics work ON atopic dermatitis"), use intent=category with data_type set AND the extra constraint in qualifiers.
+- chitchat: greeting, thanks, or a question about you/the assistant.
+
+Rules:
+- "who / which analyst / who led / who ran / who worked on X" is NEVER count_by_value. If X is a person name -> person; otherwise -> semantic.
+- Set negated=true for complements ("projects that are NOT transcriptomics", "excluding proteomics").
+- Put residual constraints (a disease, a method, a topic beyond the data type) in qualifiers.
+- topic = a clean semantic search phrase for semantic/person intents; "" otherwise.
+- Use ONLY the allowed enum values for data_type and facet; "none" when not applicable.`;
+
+export function hasRouter(env) {
+  return !!(env && env.AI);
+}
+
+// Build the Workers AI messages: system prompt, a little history for follow-ups,
+// then the current turn. History is advisory context for the classifier only.
+function toMessages(text, history) {
+  const turns = (Array.isArray(history) ? history : [])
+    .slice(-4)
+    .filter((m) => m && typeof m.text === 'string' && m.text.trim())
+    .map((m) => ({
+      role: m.role === 'assistant' || m.role === 'agent' ? 'assistant' : 'user',
+      content: m.text.trim().slice(0, 300),
+    }));
+  return [{ role: 'system', content: SYS }, ...turns, { role: 'user', content: text }];
+}
+
+async function callOnce(text, history, env) {
+  const r = await env.AI.run(env.ROUTER_MODEL || MODEL, {
+    messages: toMessages(text, history),
+    response_format: { type: 'json_schema', json_schema: intentSchema() },
+    temperature: 0,
+  });
+  let p = r?.response;
+  if (typeof p === 'string') { try { p = JSON.parse(p); } catch { p = null; } }
+  if (!p || typeof p !== 'object') throw new Error('router: no structured response');
+  return normalizeIntent(p);
+}
+
+// Classify one turn. One retry on any transient model error; then throws so the
+// caller falls back fast. Returns the intent object.
+export async function routeIntent(text, history, env) {
+  try {
+    return await callOnce(text, history, env);
+  } catch {
+    return await callOnce(text, history, env);
+  }
+}
+
+// Validate + coerce. Workers AI does not enforce enums as hard as Gemini's
+// constrained decoding, so we validate every enum here: an out-of-set intent
+// becomes 'semantic' (the safe default), and an out-of-taxonomy data_type/facet
+// becomes '' (none). This is the guarantee that a model slip cannot inject a
+// type or facet the executor doesn't understand.
+function normalizeIntent(p) {
+  const arr = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.trim()) : []);
+  const str = (v) => (typeof v === 'string' ? v : '');
+  const dt = str(p.data_type);
+  const fc = str(p.facet);
+  return {
+    intent: INTENTS.includes(p.intent) ? p.intent : 'semantic',
+    data_type: CANONICAL_DATA_TYPES.includes(dt) ? dt : '',
+    facet: FACETS.includes(fc) ? fc : '',
+    value: str(p.value) === 'none' ? '' : str(p.value),
+    qualifiers: arr(p.qualifiers),
+    negated: !!p.negated,
+    people: arr(p.people),
+    topic: str(p.topic) === 'none' ? '' : str(p.topic),
+  };
+}
