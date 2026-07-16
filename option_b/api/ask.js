@@ -73,10 +73,19 @@ function guardIntent(intent, clean) {
   if (!intent) return null;
   const toSemantic = () => ({ intent: 'semantic', topic: clean, people: intent.people || [] });
   switch (intent.intent) {
-    case 'category':
-      // The named data type must actually appear in the query.
-      if (!intent.data_type || !dataTypesInText(clean).includes(intent.data_type)) return toSemantic();
-      return intent;
+    case 'category': {
+      // The named data type must actually appear in the query. If the router
+      // supplied a valid one, require the query to support it (else it is a
+      // hallucinated type -> downgrade). If the router left it empty (it does
+      // this on some negated queries), recover it from the query text when
+      // exactly one type is named — so "projects that are NOT transcriptomics"
+      // still resolves to the transcriptomics complement.
+      const inText = dataTypesInText(clean);
+      if (intent.data_type) {
+        return inText.includes(intent.data_type) ? intent : toSemantic();
+      }
+      return inText.length === 1 ? { ...intent, data_type: inText[0] } : toSemantic();
+    }
     case 'count_by_value':
       if (!intent.value || !['tool', 'disease', 'method'].includes(intent.facet)) return toSemantic();
       return intent;
