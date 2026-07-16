@@ -89,6 +89,13 @@ export const CASES = [
     guard: { from: { intent: 'category', data_type: 'imaging', negated: false }, expect: { intent: 'category', data_type: 'imaging', negated: true } },
     ask: { contains: ['do NOT involve'], cardsMin: 6 } },
 
+  // --- summarise/overview -> list_all (a summary word is not a qualifier, so the
+  //     bareness guard must not reject it -> "could not find"). The follow-up
+  //     "can you summarise them" needs history and is checked manually. ---
+  { name: 'summarise-projects', bug: true, queries: ['summarise the projects', 'give me an overview of the projects'],
+    guard: { from: { intent: 'list_all' }, expect: { intent: 'list_all' } },
+    ask: { notContains: ['could not find'] } },
+
   // --- semantic / person ---
   { name: 'person-by-name', queries: ['projects by Jean Yang', 'work led by Ellis Patrick'],
     regex: null, route: { intent: 'person' } },

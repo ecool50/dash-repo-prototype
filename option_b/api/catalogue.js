@@ -297,7 +297,12 @@ function isBareCatalogueQuery(q, extra) {
 // exported so the LLM-router guard can enforce the same on count_total/list_all
 // (which the model otherwise emits for "how many MULTI-OMICS projects" -> 11).
 export function isBareCatalogueText(text) {
-  const allowed = new Set([...CATALOGUE_FILLER, ...LIST_WORDS, ...ENUMERATE_WORDS]);
+  // Summary/overview verbs and pronouns ("summarise them", "tell me about
+  // those") do NOT narrow the catalogue, so they must not fail the bareness
+  // check the way a real qualifier ("multi-omics") does.
+  const SUMMARY = ['summarise', 'summarize', 'summary', 'overview', 'describe',
+    'tell', 'about', 'them', 'those', 'these', 'it', 'briefly', 'again', 'more', 'here'];
+  const allowed = new Set([...CATALOGUE_FILLER, ...LIST_WORDS, ...ENUMERATE_WORDS, ...SUMMARY]);
   const tokens = String(text || '').toLowerCase().match(/[a-z0-9']+/g) || [];
   return tokens.length > 0 && tokens.every((t) => allowed.has(t));
 }

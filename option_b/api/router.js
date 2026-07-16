@@ -57,7 +57,7 @@ A DATA TYPE is one of: transcriptomics, proteomics, epigenomics, imaging, clinic
 
 Intents:
 - count_total: how many projects there are IN TOTAL, with NO type/tool/disease/topic ("how many projects", "what's in the catalogue", "total number of studies").
-- list_all: enumerate EVERY project, with NO type/tool/disease/topic ("list all projects", "show me everything", "what projects do you have"). If a data type IS named, do NOT use list_all — use category.
+- list_all: enumerate/overview EVERY project, with NO type/tool/disease/topic filter ("list all projects", "show me everything", "what projects do you have"). ALSO covers a request to summarise/overview/describe/"tell me about" the projects or the catalogue, including a follow-up pronoun ("summarise them", "tell me about those", "give me an overview") when the conversation was about the projects. If a specific data type IS named, do NOT use list_all — use category.
 - breakdown: grouped counts ACROSS all values of a facet — triggered by "by X", "grouped by", "distribution of", "which tools/diseases/methods are used". Set facet: data_type (also for "modality"), disease, tool, or method. Do NOT set data_type/value for breakdown.
 - category: the projects OF a named data type, in ANY phrasing — list/retrieve/find/show/get/pull/"list all"/"what've you got on". Set data_type. Leave value empty.
 - count_by_value: the user asks HOW MANY / the COUNT of projects for ONE specific tool, disease, or method ("how many projects use Seurat", "how many leukaemia projects", "how many projects on diabetes"). Set facet (tool|disease|method) and value=the specific name. This is different from breakdown (breakdown = counts for EVERY value; count_by_value = count for ONE named value).
