@@ -97,8 +97,8 @@ export const CASES = [
   //     bareness guard must not reject it -> "could not find"). The follow-up
   //     "can you summarise them" needs history and is checked manually. ---
   { name: 'summarise-projects', bug: true, queries: ['summarise the projects', 'give me an overview of the projects'],
-    guard: { from: { intent: 'list_all' }, expect: { intent: 'list_all' } },
-    ask: { notContains: ['could not find'] } },
+    guard: { from: { intent: 'summarise' }, expect: { intent: 'summarise' } },
+    ask: { notContains: ['could not find'], contains: ['By data type'] } },
 
   // --- semantic / person ---
   { name: 'person-by-name', queries: ['projects by Jean Yang', 'work led by Ellis Patrick'],

@@ -445,6 +445,24 @@ export async function runCatalogue(intent, env) {
       };
     }
 
+    case 'summary': {
+      // A narrated overview: the by-data-type and by-disease breakdowns plus the
+      // repeated tools, all computed from the docs. Cards are all 11 so the user
+      // can browse; the prose (agent.js) composes these numbers into a sentence.
+      const dt = groupBy('data_type', docs);
+      const dis = groupBy('disease', docs);
+      const tl = groupBy('tool', docs);
+      return {
+        kind: 'summary',
+        total,
+        dataTypes: dt.buckets,
+        unclassified: dt.unclassified,
+        diseases: dis.buckets,
+        tools: tl.buckets,
+        projects: sortByRef(docs),
+      };
+    }
+
     default:
       return { kind: 'total', total };
   }

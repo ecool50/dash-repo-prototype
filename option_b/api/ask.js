@@ -84,6 +84,7 @@ export function guardIntent(intent, clean) {
     // projects" is not a total; without this the model's count_total returns 11.
     case 'count_total':
     case 'list_all':
+    case 'summarise':
       return isBareCatalogueText(clean) ? intent : toSemantic();
 
     case 'category': {
@@ -135,6 +136,8 @@ async function dispatch(intent, clean, history, limit, env, emit) {
       return runAndAggregate({ kind: 'total' }, env, emit);
     case 'list_all':
       return runAndAggregate({ kind: 'list' }, env, emit);
+    case 'summarise':
+      return runAndAggregate({ kind: 'summary' }, env, emit);
     case 'breakdown':
       return runAndAggregate({ kind: 'group', facet: intent.facet }, env, emit);
     case 'count_by_value':

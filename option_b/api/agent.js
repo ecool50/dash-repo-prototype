@@ -272,6 +272,21 @@ function aggregateText(r) {
       : `${k} of the ${n} DASH ${projectWord(n)} involve ${lbl} data: ${titles}.`;
   }
 
+  if (r.kind === 'summary') {
+    const types = (r.dataTypes || []).map((b) => `${b.label.toLowerCase()} (${b.count})`).join(', ');
+    const nDis = (r.diseases || []).length;
+    const someDis = (r.diseases || []).slice(0, 5).map((b) => b.label).join(', ');
+    const topTools = (r.tools || []).filter((b) => b.count > 1).slice(0, 4)
+      .map((b) => `${b.label} (${b.count})`).join(', ');
+    const unclassified = r.unclassified
+      ? ` ${r.unclassified} ${projectWord(r.unclassified)} record no data type.` : '';
+    const diseasePart = nDis
+      ? ` They span ${nDis} disease ${nDis === 1 ? 'area' : 'areas'}${someDis ? `, including ${someDis}` : ''}.`
+      : '';
+    const toolPart = topTools ? ` The most-used tools are ${topTools}.` : '';
+    return `The DASH catalogue holds ${n} ${projectWord(n)}. By data type (a project can span several, so these do not sum to ${n}): ${types}.${unclassified}${diseasePart}${toolPart} All ${n} are shown beside this answer.`;
+  }
+
   if (r.kind === 'count_by_value') {
     const k = r.count;
     const verb = { tool: 'list the tool', disease: 'study', method: 'use the method' }[r.facet] || 'match';
