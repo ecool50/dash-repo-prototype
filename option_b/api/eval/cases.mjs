@@ -51,7 +51,9 @@ export const CASES = [
   // --- negation (guard recovers data_type the 8B omits) ---
   { name: 'negated-transcriptomics', bug: true, queries: ['projects that are not transcriptomics'],
     regex: null,
-    guard: { from: { intent: 'category', data_type: '', negated: true }, expect: { intent: 'category', data_type: 'transcriptomics', negated: true } },
+    // from includes value:'transcriptomics' — the 8B restates the type in value
+    // on negated queries; the guard must recover, NOT downgrade to semantic.
+    guard: { from: { intent: 'category', data_type: '', value: 'transcriptomics', negated: true }, expect: { intent: 'category', data_type: 'transcriptomics', negated: true } },
     ask: { cards: 7, contains: ['do NOT involve'] } },
   { name: 'negated-proteomics', bug: true, queries: ['which projects are not proteomics'],
     regex: null,

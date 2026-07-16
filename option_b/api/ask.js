@@ -87,12 +87,13 @@ export function guardIntent(intent, clean) {
       return isBareCatalogueText(clean) ? intent : toSemantic();
 
     case 'category': {
-      // A hard constraint the type executor cannot intersect (a specific tool in
-      // `value`, or a person) makes this a FILTERED query, not a whole-category
-      // enumeration — hand it to semantic search, which does tool/name matching,
-      // rather than returning the entire type. (Topical `qualifiers` are fine;
-      // they go to the filter-then-rank path in dispatch.)
-      if (intent.value || (intent.people && intent.people.length)) return toSemantic();
+      // A hard constraint the type executor cannot intersect (a specific TOOL in
+      // `value`, or a person) makes this a FILTERED query -> semantic. But only
+      // when `value` is a genuine other constraint: the 8B often just RESTATES
+      // the data type in `value` ("not transcriptomics" -> value:"transcriptomics"),
+      // which is redundant, not a filter, and must NOT trigger a downgrade.
+      const valueIsAType = intent.value && dataTypesInText(intent.value).length > 0;
+      if ((intent.value && !valueIsAType) || (intent.people && intent.people.length)) return toSemantic();
       // Negation is detected deterministically here — the 8B drops it on some
       // phrasings ("anything that isn't imaging"), so the query text decides.
       const negated = !!intent.negated || NEGATION_RE.test(clean.toLowerCase());
