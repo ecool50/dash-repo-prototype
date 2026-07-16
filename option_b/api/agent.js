@@ -81,7 +81,7 @@ Rules:
 - Do NOT editorialize, praise, or speculate about anyone's expertise; say nothing about biology or disease beyond what the provided fields state.
 - If the projects only partially or weakly match, say so plainly.
 - Be concise and neutral. No markdown, headings, or bullet lists.
-- Earlier turns are context for interpreting the question ONLY. Name only projects from the "Retrieved projects" list in the current message: projects you mentioned in an earlier turn are not retrieved now, and the result cards beside your answer show only the current list.`;
+- The "Conversation so far" block, if present, is ONLY for interpreting what the user is referring to. It is NOT a list of projects and NOT a source of facts — anything in it that is not also in "Retrieved projects" does not exist for this answer. Name only projects from the "Retrieved projects" list in the current message.`;
 
 const CONVERSE_SYS = `You are the DASH search assistant for the Charles Perkins Centre Data Science Hub at the University of Sydney. The user has said something conversational — a greeting, thanks, or small talk — rather than searching for a project. Reply warmly and briefly (1-2 sentences), and invite them to ask about past DASH data-science projects. You may note they can search by disease area, data modality, analytical method, or an analyst's name. Do not claim to have found any projects. No markdown.`;
 
@@ -223,6 +223,167 @@ function toolFacts(toolHits, matches) {
   return `\n\nESTABLISHED FACTS (already checked against the catalogue's tool lists — treat as true, do not re-derive, do not second-guess):\n${lines.join('\n')}\nIf the question is about one of these tools, name every project listed for it and state that exact count. Do not add or drop any.`;
 }
 
+// AGG_SYS is the system prompt for the OPTIONAL model-phrasing pass over an
+// aggregate answer. It is NOT wired in for WS2 (the catalogue path emits the
+// deterministic block directly, so no count can ever be model-generated); it is
+// kept here so WS1/Gemini can add a cosmetic rewording pass with a single call,
+// under an ironclad rule: the numbers are given and must not change.
+export const AGG_SYS = `You are the DASH search assistant. You are handed an already-computed, catalogue-wide fact (counts or a list produced directly from the database). Re-state it as ONE short, natural sentence.
+Rules:
+- The numbers and names are established facts. NEVER change, add, drop, or recompute a number. NEVER invent a project, type, tool, or disease not in the fact.
+- If the fact says counts do not sum to the total (because a project can have several data types or tools), preserve that caveat; never present the buckets as a partition of the total.
+- No markdown, no lists, no preamble. Just the sentence.`;
+
+// Turn a runCatalogue() result into a fully grounded answer string. Every number
+// here comes straight from the database (catalogue.js), so this path cannot
+// hallucinate a count the way top-K semantic retrieval did. Emitted as a single
+// token event; the frontend renders it the same as any streamed answer. For
+// 'list' and 'category', ask.js has already emitted the project cards.
+export async function streamAggregate(result, env, emit) {
+  await emit({ type: 'token', text: aggregateText(result) });
+}
+
+// The deterministic phrasing of each catalogue result. Kept separate and pure so
+// it is trivially testable and so a future model-phrasing pass can fall back to
+// it verbatim.
+function aggregateText(r) {
+  const n = r.total;
+  const projectWord = (k) => (k === 1 ? 'project' : 'projects');
+
+  if (r.kind === 'total') {
+    return `There are ${n} ${projectWord(n)} in the DASH catalogue.`;
+  }
+
+  if (r.kind === 'list') {
+    return `Here ${n === 1 ? 'is' : 'are'} all ${n} ${projectWord(n)} in the DASH catalogue, sorted by reference number. Each is shown in the results beside this answer.`;
+  }
+
+  if (r.kind === 'category') {
+    const k = r.projects.length;
+    if (k === 0) {
+      return `No projects in the DASH catalogue are recorded as ${r.label.toLowerCase()} data.`;
+    }
+    const titles = r.projects.map((p) => `"${p.title}"`).join('; ');
+    return `${k} of the ${n} DASH ${projectWord(n)} involve ${r.label.toLowerCase()} data: ${titles}.`;
+  }
+
+  if (r.kind === 'group') {
+    const facetName = {
+      data_type: 'data type',
+      disease: 'disease',
+      tool: 'tool/package',
+      method: 'analytical method',
+    }[r.facet] || r.facet;
+
+    if (!r.buckets || r.buckets.length === 0) {
+      return `The DASH catalogue holds ${n} ${projectWord(n)}, but none record a ${facetName}.`;
+    }
+
+    // Cap a long tail (tools/methods) so the sentence stays readable; the exact
+    // counts for the top buckets are what a user is after.
+    const CAP = 8;
+    const shown = r.buckets.slice(0, CAP);
+    const rest = r.buckets.length - shown.length;
+    const parts = shown.map((b) => `${b.label} (${b.count})`).join(', ');
+    const more = rest > 0 ? `, and ${rest} more ${rest === 1 ? 'category' : 'categories'}` : '';
+    const unclassified = r.unclassified
+      ? ` ${r.unclassified} ${projectWord(r.unclassified)} did not map to a high-level ${facetName}.`
+      : '';
+
+    // The overlap caveat is mandatory: a project can carry several data types /
+    // tools, so bucket counts are NOT a partition of the total.
+    return `The DASH catalogue holds ${n} ${projectWord(n)}. By ${facetName} (a project can have more than one, so these counts do not sum to ${n}): ${parts}${more}.${unclassified}`;
+  }
+
+  return `There are ${n} ${projectWord(n)} in the DASH catalogue.`;
+}
+
+// Render prior turns as a single labelled, reference-only block for the
+// synthesis prompt (NOT as peer chat messages). Assistant turns are clipped to
+// their first 200 chars — enough to resolve a pronoun, not enough to re-assert a
+// full fabricated project record. User turns are kept verbatim (a user turn
+// cannot be a hallucination). Empty string when there is no usable history.
+function historyBlock(history) {
+  const turns = normalizeHistory(history);
+  if (!turns.length) return '';
+  const lines = turns.map((t) => {
+    if (t.role === 'assistant') return `Assistant: ${t.content.slice(0, 200)}`;
+    return `User: ${t.content}`;
+  });
+  return `\n\nConversation so far (ONLY to interpret what the user is referring to — NOT a project list and NOT a source of facts):\n${lines.join('\n')}`;
+}
+
+// Connective / title tokens that must not count as name evidence. Without this,
+// an analyst_team string like "Xiangnan Xu and Beilei Bian" leaks "and" into the
+// allowed name-tokens, and any fabricated "Dr X and Dr Y" then matches on "and"
+// and slips through as grounded.
+const NAME_STOP = new Set([
+  'and', 'the', 'of', 'for', 'von', 'van', 'de', 'di', 'del', 'da', 'dos', 'la',
+  'le', 'el', 'bin', 'al', 'dr', 'prof', 'professor', 'mr', 'mrs', 'ms', 'associate',
+]);
+
+// The universe an answer is allowed to name: reference numbers and investigator
+// name-tokens drawn from the retrieved matches.
+function allowedSet(matches) {
+  const refs = new Set();
+  const peopleTokens = new Set();
+  for (const m of matches || []) {
+    if (m.ref_number != null) refs.add(String(m.ref_number));
+    const inv = m.investigators || {};
+    const people = [
+      inv.lead_data_scientist, inv.collaborator, inv.research_leader,
+      ...(Array.isArray(inv.analyst_team) ? inv.analyst_team : [inv.analyst_team]),
+    ];
+    for (const p of people) {
+      for (const tok of String(p || '').toLowerCase().match(/[a-zà-ÿ]{2,}/g) || []) {
+        if (!NAME_STOP.has(tok)) peopleTokens.add(tok);
+      }
+    }
+  }
+  return { refs, peopleTokens };
+}
+
+// Grounding backstop (WS3). Returns { grounded, reason }. Deliberately HIGH
+// PRECISION: it only flags the two fabrication signatures we can detect with
+// almost no false positives, because a false flag needlessly downgrades a good
+// answer to the template. It does NOT attempt to catch a bare invented title
+// (that would misfire on legitimately quoted questions / field values); the
+// prompt's allow-note is the first line of defence, this is the backstop for the
+// exact failure seen in the wild — an invented "[0019]" with fake investigators.
+//   A) a reference number the retrieved set does not contain, and
+//   B) a "Dr/Prof <name>" sharing NO token with any retrieved investigator
+//      (only checked when the retrieved set actually lists people).
+export function verifyGrounded(text, matches) {
+  const { refs, peopleTokens } = allowedSet(matches);
+  const t = String(text || '');
+
+  // Reference detection is bracketed ([0019]) OR prefixed (ref/project/#0019),
+  // 4-digit only. A BARE 4-digit number is deliberately NOT treated as a ref:
+  // sample sizes and measurements ("n=0400", "0800 nm") are common and legal in
+  // a grounded answer, and flagging them would discard good answers. The
+  // observed fabrication ("[0019]") is bracketed, so it is still caught.
+  const refTokens = new Set();
+  for (const m of t.matchAll(/\[(\d{4})\]/g)) refTokens.add(m[1]);
+  for (const m of t.matchAll(/\b(?:ref|reference|project|study|#)[\s#:.-]*(\d{4})\b/gi)) refTokens.add(m[1]);
+  for (const r of refTokens) {
+    if (!refs.has(r) && !refs.has(r.padStart(4, '0'))) {
+      return { grounded: false, reason: `reference ${r} was not retrieved` };
+    }
+  }
+
+  if (peopleTokens.size) {
+    const re = /\b(?:Dr|Prof|Professor|A\/?Prof|Associate Professor)\.?\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.-]+(?:\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.-]+){0,3})/g;
+    for (const m of t.matchAll(re)) {
+      const nameToks = (m[1].toLowerCase().match(/[a-zà-ÿ]{2,}/g) || []).filter((tok) => !NAME_STOP.has(tok));
+      if (nameToks.length && !nameToks.some((tok) => peopleTokens.has(tok))) {
+        return { grounded: false, reason: `person "${m[1]}" was not retrieved` };
+      }
+    }
+  }
+
+  return { grounded: true };
+}
+
 export async function streamSynthesize(query, matches, env, opts, emit) {
   if (!matches || matches.length === 0) {
     await emit({
@@ -238,20 +399,41 @@ export async function streamSynthesize(query, matches, env, opts, emit) {
     : '';
 
   const facts = toolFacts(opts && opts.toolHits, matches);
+  // History is folded into the prompt as a clearly-labelled, reference-ONLY
+  // block (see historyBlock), NOT passed back as peer assistant messages. That
+  // is the history-poisoning fix: a prior turn — possibly a hallucination the
+  // model itself produced — can no longer be treated as established fact on a
+  // follow-up. It can still be used to resolve "the RNA-seq one".
+  const hist = historyBlock(opts && opts.history);
+  const allowNote = `\n\nThe only projects that exist for this answer are the ${matches.length} listed under "Retrieved projects". Do not mention any project, reference number, or person that is not in that list.`;
 
+  // Grounding guard (WS3): BUFFER the whole answer instead of streaming it live,
+  // verify it names nothing outside the retrieved set, then emit. The answer is
+  // 1-3 sentences and the result cards already rendered (ask.js emits them
+  // before this runs), so the small added latency buys a hard guarantee that a
+  // fabricated project / reference / investigator is never shown. streamWorkersAI
+  // streams live only when handed a forwarding emit; here it gets a collector,
+  // so nothing reaches the user until it passes verifyGrounded.
+  const buf = [];
+  const collect = async (e) => { if (e.type === 'token' && typeof e.text === 'string') buf.push(e.text); };
   const full = await streamWorkersAI(
     SYNTH_SYS,
-    `Query: ${query}\n\nRetrieved projects:\n${context}${facts}${weakNote}`,
+    `Query: ${query}\n\nRetrieved projects:\n${context}${facts}${weakNote}${allowNote}${hist}`,
     env,
-    emit,
+    collect,
     // Enough room to name every match: four long project titles overrun a
     // tighter cap and the answer gets truncated mid-sentence.
     360,
-    normalizeHistory(opts && opts.history),
+    [], // history is in the prompt block, not peer turns
   );
-  if (full.trim()) return;
 
-  // Nothing streamed — deterministic template fallback.
+  if (full.trim() && verifyGrounded(full, matches).grounded) {
+    await emit({ type: 'token', text: full });
+    return;
+  }
+
+  // Empty OR ungrounded (named something not retrieved) — fall back to the
+  // deterministic template, which can only name real matches.
   if (weak) {
     const extra = matches.length > 1 ? ` (plus ${matches.length - 1} other loosely related)` : '';
     await emit({ type: 'token', text: `I didn't find a strong match for "${query}", but the closest, only loosely related, is "${matches[0].title}"${extra}.` });

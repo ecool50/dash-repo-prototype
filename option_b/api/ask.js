@@ -16,7 +16,8 @@
 // being searched literally.
 
 import { searchProjects } from './search.js';
-import { planQuery, streamSynthesize, streamConverse } from './agent.js';
+import { planQuery, streamSynthesize, streamConverse, streamAggregate } from './agent.js';
+import { classifyCatalogue, runCatalogue } from './catalogue.js';
 
 export async function askStream(body, env, emit) {
   const { query, limit = 8, history = [] } = body || {};
@@ -24,6 +25,26 @@ export async function askStream(body, env, emit) {
 
   if (!clean) {
     await emit({ type: 'token', text: 'Please type a question or describe what you are looking for.' });
+    return;
+  }
+
+  // EXACT / catalogue-wide path (WS2). A deterministic classifier catches
+  // counting, listing, by-category, and named-data-type queries BEFORE the
+  // planner or any embedding runs, and answers them from a direct read over all
+  // documents (catalogue.js). This is what makes "how many projects by data
+  // type" return real DB numbers instead of an invented count. Only exact-typed
+  // queries are intercepted; everything else falls through to semantic search.
+  const cat = classifyCatalogue(clean);
+  if (cat) {
+    const result = await runCatalogue(cat, env);
+    // 'list' and 'category' return concrete project docs -> show them as cards,
+    // exactly like a search result. 'total' and 'group' have no per-project
+    // result set (the answer is the count itself), so no cards are emitted and
+    // the UI keeps whatever cards were already shown.
+    if (result.projects) {
+      await emit({ type: 'matches', matches: result.projects, searched: true });
+    }
+    await streamAggregate(result, env, emit);
     return;
   }
 

@@ -105,8 +105,14 @@ export async function searchProjects(body, env) {
     if (byName.length) weak = false;
 
     // Same idea for a named tool/package, which the embedding stage misses.
+    // GATED (WS4): only run the tool lookup when the message actually READS as a
+    // tool question. Without this gate, any message that merely CONTAINS a
+    // package name fires it — most damagingly a user PASTING a project blurb
+    // ("... tools: Seurat, limma, scran ..."), which then hijacks the answer
+    // with an authoritative "projects using Seurat" block the user never asked
+    // for. isToolLookupCandidate() rejects long/pasted text and non-questions.
     const toolText = (typeof raw === 'string' && raw.trim()) ? raw : (hasQuery ? query : '');
-    if (toolText) {
+    if (toolText && isToolLookupCandidate(toolText)) {
       const byTool = await matchByTool(toolText, env);
       results = mergeByRef(results, byTool, limit);
       if (byTool.length) weak = false;
@@ -238,6 +244,28 @@ async function matchByInvestigator(query, people, env) {
   } catch {
     return [];
   }
+}
+
+// Whether a message should trigger the exact tool lookup at all (WS4 gate).
+// A genuine tool question is SHORT and reads as a question or a usage phrase.
+// A pasted project record or a long paragraph that merely lists tool names is
+// neither, so it is rejected before matchByTool runs. Exported for tests.
+//
+// Passes:  "which projects use Seurat?", "anything with limma", "who used edgeR"
+// Rejects: a 60-word pasted blurb "... | tools: Seurat, limma, scran | ...",
+//          and short statements with no question/usage frame.
+export function isToolLookupCandidate(text) {
+  const t = String(text || '').trim();
+  if (!t) return false;
+  // Length ceiling: a pasted blurb / paragraph is not a tool question. This is
+  // the single strongest signal and rejects the hijack case outright.
+  if (t.length > 140 || t.split(/\s+/).length > 16) return false;
+  // Must read as a question or a usage phrase, not a statement that only
+  // happens to contain a package name.
+  if (t.includes('?')) return true;
+  if (/^(which|what|any|anything|does|do|is|are|show|find|list|who|name)\b/i.test(t)) return true;
+  if (/\b(use[ds]?|using|utilis\w*|utiliz\w*|with|via|run|ran|package|packages|tool|tools|software|librar\w*)\b/i.test(t)) return true;
+  return false;
 }
 
 // Find projects that list a named tool/package from the query ("which projects
