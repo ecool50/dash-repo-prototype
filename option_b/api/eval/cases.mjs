@@ -41,6 +41,10 @@ export const CASES = [
   { name: 'category-rnaseq-router', bug: true, queries: ["what've you got on RNA-seq", 'show me the single-cell RNA work'],
     regex: null, route: { intent: 'category', data_type: 'transcriptomics' }, ask: { cards: 4, contains: ['transcriptomics'] } },
 
+  // spatial is its own cross-cutting type (0037, 0040, 0046)
+  { name: 'category-spatial', queries: ['spatial projects', 'spatially resolved projects'],
+    regex: 'category', ask: { cards: 3, contains: ['3 of the 11'] } },
+
   // --- count_by_value ---
   { name: 'count-tool-seurat', queries: ['how many projects use Seurat', 'count the Seurat projects'],
     regex: null, route: { intent: 'count_by_value', facet: 'tool', value: 'seurat' }, ask: { cards: 2, contains: ['Seurat'] } },
@@ -115,5 +119,6 @@ export const CASES = [
   { name: 'exec-category-transcriptomics', exec: { kind: 'category', type: 'transcriptomics', count: 4 } },
   { name: 'exec-category-transcriptomics-neg', exec: { kind: 'category', type: 'transcriptomics', negated: true, count: 7 } },
   { name: 'exec-category-proteomics', exec: { kind: 'category', type: 'proteomics', count: 2 } },
+  { name: 'exec-category-spatial', exec: { kind: 'category', type: 'spatial', count: 3 } },
   { name: 'exec-total', exec: { kind: 'total', count: 11 } },
 ];

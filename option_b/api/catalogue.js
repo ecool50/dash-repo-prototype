@@ -109,6 +109,20 @@ const DATA_TYPES = [
     query: ['imaging', 'imaging mass cytometry', 'imc', 'multiplexed imaging'],
   },
   {
+    // CROSS-CUTTING type (its own category per DASH decision, July 2026). Tags
+    // projects that resolve tissue location, IN ADDITION to their assay type:
+    // 0037 (imaging mass cytometry / spatial proteomics / multiplexed tissue
+    // imaging), 0040 (10x Xenium / imaging-based single-cell transcriptomics),
+    // 0046 (spatial transcriptomics / single-cell spatial). So 0040 is both
+    // transcriptomics AND spatial; the overlap model already allows that.
+    // `query` is kept narrow (no bare "imaging") so it does not collide with the
+    // imaging type; the taxonomy resolves overlap by the term the user actually uses.
+    canonical: 'spatial',
+    label: 'Spatial',
+    match: ['spatial', 'xenium', 'imaging-based single-cell', 'multiplexed tissue imaging', 'imaging mass cytometry', 'single-cell spatial'],
+    query: ['spatial', 'xenium', 'spatially resolved', 'spatial omics'],
+  },
+  {
     canonical: 'clinical_meta',
     label: 'Clinical / meta-analysis',
     // 0051 (systematic review, survival/radiotherapy outcomes, hazard ratios),
