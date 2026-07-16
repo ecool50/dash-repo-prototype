@@ -91,6 +91,13 @@ function guardIntent(intent, clean) {
       return intent;
     case 'breakdown':
       if (!['data_type', 'disease', 'tool', 'method'].includes(intent.facet)) return toSemantic();
+      // A breakdown must actually be a grouping request. Without a grouping cue
+      // ("by", "distribution", "summarise", ...) the model over-triggered it —
+      // e.g. "are there any projects on sample size calculations?" is a search,
+      // not a by-method tally. Downgrade to semantic so the real project surfaces.
+      if (!/\b(by|per|grouped|group|breakdown|break down|distribution|summar|across|split|tally)\b/.test(clean.toLowerCase())) {
+        return toSemantic();
+      }
       return intent;
     case 'person':
       if (!intent.people || !intent.people.length) return toSemantic();
