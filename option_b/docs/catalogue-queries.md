@@ -131,10 +131,10 @@ in one editable constant. Current assignment of the 11 projects:
 
 | Ref | Data type(s) | Basis (raw modality) |
 | --- | --- | --- |
-| 0037 | proteomics, imaging | imaging mass cytometry; spatial proteomics; multiplexed tissue imaging |
-| 0040 | transcriptomics | 10x Xenium; imaging-based single-cell transcriptomics |
+| 0037 | proteomics, imaging, spatial | imaging mass cytometry; spatial proteomics; multiplexed tissue imaging |
+| 0040 | transcriptomics, spatial | 10x Xenium; imaging-based single-cell transcriptomics |
 | 0042 | epigenomics | CUT&RUN; peak-by-sample; promoter peak signal |
-| 0046 | transcriptomics | spatial transcriptomics; single-cell spatial gene expression |
+| 0046 | transcriptomics, spatial | spatial transcriptomics; single-cell spatial gene expression |
 | 0047 | wearable / sensor | accelerometer; wrist/thigh sensor |
 | 0051 | clinical / meta-analysis | systematic review; survival / radiotherapy outcomes |
 | 0052 | transcriptomics | bulk RNA-seq; gene counts |
@@ -143,7 +143,7 @@ in one editable constant. Current assignment of the 11 projects:
 | 0057 | study design / biostatistics | `data_modality` **empty**; classified from research_area / primary_methods (sample size, power analysis) |
 | 0076 | epigenomics | CUT&RUN; H3K4me2 / H3K27me3 histone marks |
 
-Resulting breakdown: transcriptomics 4, epigenomics 2, proteomics 2, imaging 1,
+Resulting breakdown: transcriptomics 4, spatial 3, epigenomics 2, proteomics 2, imaging 1,
 clinical/meta 1, study design 1, wearable/sensor 1, and **0 unclassified**.
 (These overlap: 0037 is counted in both proteomics and imaging, so they do not
 sum to 11.)
@@ -155,8 +155,8 @@ assay type — scanning `research_area` + `primary_methods` instead of
 `data_modality`. Add other methods-only categories the same way.
 
 Open questions for review:
-- Should "spatial" be its own data type rather than folding Xenium / spatial
-  transcriptomics into transcriptomics and spatial proteomics into proteomics?
+- RESOLVED (July 2026): "spatial" IS its own cross-cutting type (0037, 0040,
+  0046), tagged in addition to the assay type (0040 is transcriptomics AND spatial).
 - Should 0037 (imaging mass cytometry) be "imaging", "spatial proteomics", or
   both, as now?
 - Are there other methods-only consult categories (e.g. pipeline/QC, simulation)

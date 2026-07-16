@@ -99,7 +99,7 @@ const DATA_TYPES = [
       'cut&run', 'cut & run', 'cutandrun', 'peak-by-sample', 'peak signal',
       'histone', 'h3k', 'promoter-associated', 'promoter peak', 'chromatin',
     ],
-    query: ['epigenom', 'epigenetic', 'cut&run', 'cut and run', 'chip', 'histone', 'chromatin'],
+    query: ['epigenomics', 'epigenomic', 'epigenetic', 'cut&run', 'cut and run', 'chip', 'histone', 'chromatin'],
   },
   {
     canonical: 'imaging',
@@ -164,7 +164,7 @@ const DATA_TYPES = [
     // (though kept in `match`) because they also phrase single-project field
     // questions ("what is the sample size of the X project?"), which must go to
     // semantic retrieval, not a category enumeration.
-    query: ['study design', 'study-design', 'biostatistic'],
+    query: ['study design', 'study-design', 'biostatistics', 'biostatistic'],
   },
 ];
 
@@ -178,9 +178,19 @@ export const CANONICAL_DATA_TYPES = DATA_TYPES.map((t) => t.canonical);
 // cross-check guard on the LLM router: if the router says intent=category with
 // data_type X but X's synonyms are nowhere in the query, we distrust it and
 // downgrade to semantic search rather than return a confidently-wrong category.
+// Match a query synonym in text. Multi-word / hyphenated phrases match as a
+// substring; a SINGLE word matches only as a whole word, so a type name that is
+// a prefix of a longer token — "spatial" inside the tool "SpatialExperiment" —
+// does not spuriously trigger the type. (Stems like "proteomic" still work
+// because the full form "proteomics" is also in each type's synonym list.)
+function synMatch(syn, q) {
+  if (/[\s-]/.test(syn)) return q.includes(syn);
+  return new RegExp(`\\b${syn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(q);
+}
+
 export function dataTypesInText(text) {
   const q = String(text || '').toLowerCase();
-  return DATA_TYPES.filter((t) => t.query.some((syn) => q.includes(syn))).map((t) => t.canonical);
+  return DATA_TYPES.filter((t) => t.query.some((syn) => synMatch(syn, q))).map((t) => t.canonical);
 }
 
 // The subset of docs belonging to a canonical data type (any modality string
@@ -337,7 +347,7 @@ function detectFacet(q) {
 // detect the multi-type case ("proteomics and transcriptomics") so it is not
 // silently reduced to the first match.
 function detectAllDataTypes(q) {
-  return DATA_TYPES.filter((t) => t.query.some((syn) => q.includes(syn)));
+  return DATA_TYPES.filter((t) => t.query.some((syn) => synMatch(syn, q)));
 }
 
 // Enumerate/count/retrieval verbs allowed inside a bare type query.
