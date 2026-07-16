@@ -18,7 +18,12 @@
 
 import { searchProjects, categoryRanked } from './search.js';
 import { planQuery, streamSynthesize, streamConverse, streamAggregate } from './agent.js';
-import { classifyCatalogue, runCatalogue, dataTypesInText } from './catalogue.js';
+import { classifyCatalogue, runCatalogue, dataTypesInText, isBareCatalogueText } from './catalogue.js';
+
+// A negation cue anywhere in the query. Used to force `negated` on a category
+// intent deterministically, since the 8B router drops it on phrasings like
+// "anything that isn't imaging".
+const NEGATION_RE = /\bnot\b|n't\b|\bwithout\b|\bexclud|\bexcept\b|\bnon-|\bother than\b/;
 import { routeIntent, hasRouter } from './router.js';
 
 export async function askStream(body, env, emit) {
@@ -75,18 +80,29 @@ export function guardIntent(intent, clean) {
   if (!intent) return null;
   const toSemantic = () => ({ intent: 'semantic', topic: clean, people: intent.people || [] });
   switch (intent.intent) {
+    // A whole-catalogue count/list must be UNQUALIFIED. "how many multi-omics
+    // projects" is not a total; without this the model's count_total returns 11.
+    case 'count_total':
+    case 'list_all':
+      return isBareCatalogueText(clean) ? intent : toSemantic();
+
     case 'category': {
-      // The named data type must actually appear in the query. If the router
-      // supplied a valid one, require the query to support it (else it is a
-      // hallucinated type -> downgrade). If the router left it empty (it does
-      // this on some negated queries), recover it from the query text when
-      // exactly one type is named — so "projects that are NOT transcriptomics"
-      // still resolves to the transcriptomics complement.
+      // A hard constraint the type executor cannot intersect (a specific tool in
+      // `value`, or a person) makes this a FILTERED query, not a whole-category
+      // enumeration — hand it to semantic search, which does tool/name matching,
+      // rather than returning the entire type. (Topical `qualifiers` are fine;
+      // they go to the filter-then-rank path in dispatch.)
+      if (intent.value || (intent.people && intent.people.length)) return toSemantic();
+      // Negation is detected deterministically here — the 8B drops it on some
+      // phrasings ("anything that isn't imaging"), so the query text decides.
+      const negated = !!intent.negated || NEGATION_RE.test(clean.toLowerCase());
+      // The named data type must appear in the query; recover it when the router
+      // left it empty and exactly one type is named (happens on negated queries).
       const inText = dataTypesInText(clean);
       if (intent.data_type) {
-        return inText.includes(intent.data_type) ? intent : toSemantic();
+        return inText.includes(intent.data_type) ? { ...intent, negated } : toSemantic();
       }
-      return inText.length === 1 ? { ...intent, data_type: inText[0] } : toSemantic();
+      return inText.length === 1 ? { ...intent, data_type: inText[0], negated } : toSemantic();
     }
     case 'count_by_value':
       if (!intent.value || !['tool', 'disease', 'method'].includes(intent.facet)) return toSemantic();

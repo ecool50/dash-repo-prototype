@@ -69,6 +69,21 @@ export const CASES = [
     guard: { from: { intent: 'category', data_type: 'clinical_meta' }, expect: { intent: 'semantic' } },
     ask: { notContains: ['By '] } },
 
+  // --- guard: a qualified count/list is not a whole-catalogue answer ---
+  { name: 'multi-omics-not-total', bug: true, queries: ['how many multi-omics projects', 'how many single-cell spatial projects'],
+    guard: { from: { intent: 'count_total' }, expect: { intent: 'semantic' } },
+    ask: { notContains: ['There are 11 projects'] } },
+
+  // --- guard: category + a hard tool constraint -> semantic (don't drop it) ---
+  { name: 'category-tool-constraint', bug: true, queries: ['transcriptomics projects using Seurat'],
+    guard: { from: { intent: 'category', data_type: 'transcriptomics', value: 'Seurat' }, expect: { intent: 'semantic' } },
+    ask: { cardsMin: 1, notContains: ['4 of the 11 DASH projects involve transcriptomics'] } },
+
+  // --- guard: deterministic negation (the 8B drops "isn't") ---
+  { name: 'negation-contraction', bug: true, queries: ["anything that isn't imaging", 'projects without RNA-seq'],
+    guard: { from: { intent: 'category', data_type: 'imaging', negated: false }, expect: { intent: 'category', data_type: 'imaging', negated: true } },
+    ask: { contains: ['do NOT involve'], cardsMin: 6 } },
+
   // --- semantic / person ---
   { name: 'person-by-name', queries: ['projects by Jean Yang', 'work led by Ellis Patrick'],
     regex: null, route: { intent: 'person' } },
