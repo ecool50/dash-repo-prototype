@@ -260,11 +260,26 @@ function aggregateText(r) {
 
   if (r.kind === 'category') {
     const k = r.projects.length;
+    const lbl = r.label.toLowerCase();
     if (k === 0) {
-      return `No projects in the DASH catalogue are recorded as ${r.label.toLowerCase()} data.`;
+      return r.negated
+        ? `Every project in the DASH catalogue involves ${lbl} data.`
+        : `No projects in the DASH catalogue are recorded as ${lbl} data.`;
     }
     const titles = r.projects.map((p) => `"${p.title}"`).join('; ');
-    return `${k} of the ${n} DASH ${projectWord(n)} involve ${r.label.toLowerCase()} data: ${titles}.`;
+    return r.negated
+      ? `${k} of the ${n} DASH ${projectWord(n)} do NOT involve ${lbl} data: ${titles}.`
+      : `${k} of the ${n} DASH ${projectWord(n)} involve ${lbl} data: ${titles}.`;
+  }
+
+  if (r.kind === 'count_by_value') {
+    const k = r.count;
+    const verb = { tool: 'list the tool', disease: 'study', method: 'use the method' }[r.facet] || 'match';
+    if (k === 0) {
+      return `No projects in the DASH catalogue ${verb} "${r.value}".`;
+    }
+    const titles = r.projects.map((p) => `"${p.title}"`).join('; ');
+    return `${k} of the ${n} DASH ${projectWord(n)} ${verb} "${r.value}": ${titles}.`;
   }
 
   if (r.kind === 'group') {

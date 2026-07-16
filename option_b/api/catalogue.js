@@ -160,6 +160,21 @@ const DATA_TYPES = [
 // executor doesn't understand.
 export const CANONICAL_DATA_TYPES = DATA_TYPES.map((t) => t.canonical);
 
+// Canonical slugs whose synonyms actually appear in the text. Used as the
+// cross-check guard on the LLM router: if the router says intent=category with
+// data_type X but X's synonyms are nowhere in the query, we distrust it and
+// downgrade to semantic search rather than return a confidently-wrong category.
+export function dataTypesInText(text) {
+  const q = String(text || '').toLowerCase();
+  return DATA_TYPES.filter((t) => t.query.some((syn) => q.includes(syn))).map((t) => t.canonical);
+}
+
+// The subset of docs belonging to a canonical data type (any modality string
+// maps to it). Used by search.js categoryRanked for filter-then-semantic-rank.
+export function projectsOfType(docs, type) {
+  return (docs || []).filter((d) => projectDataTypes(d).has(type));
+}
+
 // The stored fields each facet groups on. Kept here so the pipeline and the
 // classifier agree on one source of truth.
 const FACET_FIELD = {
@@ -353,13 +368,40 @@ export async function runCatalogue(intent, env) {
 
     case 'category': {
       const type = DATA_TYPES.find((t) => t.canonical === intent.type);
-      const projects = docs.filter((d) => projectDataTypes(d).has(intent.type));
+      const inType = (d) => projectDataTypes(d).has(intent.type);
+      // `negated` gives the complement (all projects that are NOT of this type),
+      // which the deterministic set makes trivial and correct — the regex router
+      // refuses negation, so this path is reachable only from the LLM router.
+      const projects = docs.filter((d) => (intent.negated ? !inType(d) : inType(d)));
       return {
         kind: 'category',
         facet: 'data_type',
         type: intent.type,
         label: type ? type.label : intent.type,
+        negated: !!intent.negated,
         total,
+        projects: sortByRef(projects),
+      };
+    }
+
+    case 'count_by_value': {
+      // "how many projects use Seurat / how many leukaemia projects" — an exact
+      // count over a single named tool/disease/method value, which semantic
+      // search cannot produce. The number is set membership computed here.
+      const field = FACET_FIELD[intent.facet];
+      const needle = String(intent.value || '').toLowerCase();
+      const projects = (field && needle)
+        ? docs.filter((d) => (getPath(d, field) || []).some((v) => {
+          const s = String(v).toLowerCase();
+          return s === needle || s.includes(needle) || needle.includes(s);
+        }))
+        : [];
+      return {
+        kind: 'count_by_value',
+        facet: intent.facet,
+        value: intent.value,
+        total,
+        count: projects.length,
         projects: sortByRef(projects),
       };
     }

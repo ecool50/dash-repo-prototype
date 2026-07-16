@@ -14,6 +14,7 @@
 
 import { client, DB, COLL } from './mongo.js';
 import { expandAbbreviations } from './abbrev.js';
+import { projectsOfType } from './catalogue.js';
 
 const EMBED_MODEL = '@cf/baai/bge-large-en-v1.5';
 const RERANK_MODEL = '@cf/baai/bge-reranker-base';
@@ -163,6 +164,26 @@ function toolMatchDetail(text, docs) {
 export async function listProjectRefs(env) {
   const docs = await client(env).find(DB, COLL, {}, { projection: { ref_number: 1, _id: 0 } });
   return { refs: docs.map((d) => d.ref_number).filter(Boolean) };
+}
+
+// Qualified category ("transcriptomics work on atopic dermatitis"): filter
+// STRUCTURALLY to the complete typed set (no cosine floor can drop a member),
+// then ORDER by semantic relevance to the qualifier. Completeness from the
+// filter, ranking from the reranker. Returns { results } for the dispatcher to
+// show as cards and hand to the grounded synthesis step.
+export async function categoryRanked({ type, qualifiers, limit = 8 }, env) {
+  const docs = await client(env).find(DB, COLL, {}, { projection: hideVector() });
+  const typed = projectsOfType(docs, type);
+  const qtext = (Array.isArray(qualifiers) ? qualifiers : []).join(' ').trim();
+  if (!qtext || typed.length <= 1) return { results: typed.slice(0, limit) };
+
+  const reranked = await rerank(qtext, typed, env, typed.length);
+  const ordered = reranked.results.slice();
+  // Preserve completeness: append any typed project the floor dropped, so a
+  // category answer never silently loses a member — it just ranks it lower.
+  const seen = new Set(ordered.map((r) => r.ref_number));
+  for (const d of typed) if (!seen.has(d.ref_number)) ordered.push(d);
+  return { results: ordered.slice(0, limit) };
 }
 
 export async function getProject(id, env) {
