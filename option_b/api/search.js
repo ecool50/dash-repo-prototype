@@ -124,6 +124,20 @@ export async function searchProjects(body, env) {
       // asking it to re-derive one. See toolFacts() in agent.js.
       toolHits = toolMatchDetail(toolText, byTool);
     }
+
+    // Same idea for a named DISEASE. Disease names are specific enough that
+    // embedding recall under-surfaces them ("cancer projects", "who worked on
+    // the leukaemia project" returned nothing), and unlike tools they are common
+    // in ordinary queries, so this is NOT gated behind a question-shape check —
+    // it just merges any project whose disease field the query names. Merged (not
+    // fact-injected), so an incidental mention only broadens results, never
+    // hijacks the answer.
+    const diseaseText = (typeof raw === 'string' && raw.trim()) ? raw : (hasQuery ? query : '');
+    if (diseaseText) {
+      const byDisease = await matchByDisease(diseaseText, env);
+      results = mergeByRef(results, byDisease, limit);
+      if (byDisease.length) weak = false;
+    }
   } else {
     results = await client(env).find(DB, COLL, matchFilter, {
       sort: { updated_at: -1 },
@@ -305,6 +319,30 @@ async function matchByTool(query, env) {
     const ors = tokens.map((t) => ({
       'analytical_methods.tools_packages': {
         $regex: `^${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
+        $options: 'i',
+      },
+    }));
+    return await client(env).find(DB, COLL, { $or: ors }, { projection: hideVector(), limit: 10 });
+  } catch {
+    return [];
+  }
+}
+
+// Find projects whose disease field the query names ("cancer projects", "who
+// worked on the leukaemia project"). Unlike tools, diseases are multi-word
+// ("heart failure", "hepatocellular carcinoma"), so match a query token as a
+// word-start INSIDE a disease value (\btoken), not the whole field: "heart"
+// finds "heart failure", "cancer" finds "cancer". Tokens are >=4 letters and not
+// generic query words, so ordinary phrasing does not collide. Resilient: [] on
+// any error.
+async function matchByDisease(query, env) {
+  try {
+    const tokens = [...new Set((String(query || '').toLowerCase().match(/[a-z]{4,}/g) || [])
+      .filter((t) => !NAME_STOPWORDS.has(t)))];
+    if (!tokens.length) return [];
+    const ors = tokens.map((t) => ({
+      'project_details.disease': {
+        $regex: `\\b${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
         $options: 'i',
       },
     }));

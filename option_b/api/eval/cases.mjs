@@ -91,8 +91,11 @@ export const CASES = [
   { name: 'person-by-name', queries: ['projects by Jean Yang', 'work led by Ellis Patrick'],
     regex: null, route: { intent: 'person' } },
 
-  { name: 'who-worked-on-disease', bug: true, knownGap: true, queries: ['who worked on the leukaemia project'],
-    regex: null, route: { intent: 'semantic' }, ask: { cardsMin: 1 } },
+  // disease recall: matchByDisease surfaces projects by their disease field
+  // (was the known gap — "could not find" for cancer/heart/leukaemia).
+  { name: 'disease-recall', bug: true,
+    queries: ['cancer projects', 'heart projects', 'who worked on the leukaemia project'],
+    ask: { cardsMin: 1 } },
 
   { name: 'chitchat', queries: ['hi there, what can you do', 'thanks for the help', 'who are you'],
     regex: null, route: { intent: 'chitchat' }, ask: { cards: 0 } },
