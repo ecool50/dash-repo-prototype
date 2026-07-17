@@ -104,6 +104,12 @@ export const CASES = [
   { name: 'person-by-name', queries: ['projects by Jean Yang', 'work led by Ellis Patrick'],
     regex: null, route: { intent: 'person' } },
 
+  // person search must DESCRIBE the person's projects, not deny them (the raw
+  // terse follow-up "what about Elijah" made the 8B claim no info existed).
+  { name: 'person-lists-projects', bug: true,
+    queries: ['what projects has Elijah worked on', 'projects involving Elijah Willie'],
+    route: { intent: 'person' }, ask: { cardsMin: 3, notContains: ['does not record any information'] } },
+
   // disease recall: matchByDisease surfaces projects by their disease field
   // (was the known gap — "could not find" for cancer/heart/leukaemia).
   { name: 'disease-recall', bug: true,

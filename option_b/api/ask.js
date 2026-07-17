@@ -179,8 +179,15 @@ async function runSemantic(intent, clean, history, limit, env, emit) {
   const searchResult = await searchProjects({ query: topic, limit, people: intent.people || [], raw: clean }, env);
   const matches = searchResult.results || [];
   await emit({ type: 'matches', matches, searched: true });
+  // For a person search, hand the synthesis a RESOLVED question rather than the
+  // raw (often terse follow-up) query. Otherwise the 8B reads "what about Elijah"
+  // as "give me a bio of Elijah", finds no bio field, and denies the person even
+  // though their projects were retrieved.
+  const synthQuery = (intent.people && intent.people.length)
+    ? `Which past DASH projects involve ${intent.people.join(' and ')}?${topic ? ' ' + topic : ''}`
+    : clean;
   await streamSynthesize(
-    clean, matches, env,
+    synthQuery, matches, env,
     { weak: !!searchResult.weak, history, toolHits: searchResult.toolHits },
     emit,
   );
