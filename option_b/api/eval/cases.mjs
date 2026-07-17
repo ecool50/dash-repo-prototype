@@ -119,6 +119,12 @@ export const CASES = [
   { name: 'chitchat', queries: ['hi there, what can you do', 'thanks for the help', 'who are you'],
     regex: null, route: { intent: 'chitchat' }, ask: { cards: 0 } },
 
+  // out-of-scope questions must be DECLINED, not answered (the agent gave a full
+  // maths lecture on "what is Riemann hypothesis").
+  { name: 'off-topic-decline', bug: true,
+    queries: ['what is Riemann hypothesis', 'explain the Riemann hypothesis', "what's the capital of France"],
+    ask: { cards: 0, notContains: ['prime numbers', 'zeta', 'Paris', 'number theory'] } },
+
   // --- executor math (checked offline against the fixture) ---
   { name: 'exec-count-seurat', exec: { kind: 'count_by_value', facet: 'tool', value: 'Seurat', count: 2 } },
   { name: 'exec-count-edger', exec: { kind: 'count_by_value', facet: 'tool', value: 'edgeR', count: 4 } },

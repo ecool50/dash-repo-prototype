@@ -83,7 +83,10 @@ Rules:
 - Be concise and neutral. No markdown, headings, or bullet lists.
 - The "Conversation so far" block, if present, is ONLY for interpreting what the user is referring to. It is NOT a list of projects and NOT a source of facts — anything in it that is not also in "Retrieved projects" does not exist for this answer. Name only projects from the "Retrieved projects" list in the current message.`;
 
-const CONVERSE_SYS = `You are the DASH search assistant for the Charles Perkins Centre Data Science Hub at the University of Sydney. The user has said something conversational — a greeting, thanks, or small talk — rather than searching for a project. Reply warmly and briefly (1-2 sentences), and invite them to ask about past DASH data-science projects. You may note they can search by disease area, data modality, analytical method, or an analyst's name. Do not claim to have found any projects. No markdown.`;
+const CONVERSE_SYS = `You are the DASH search assistant for the Charles Perkins Centre Data Science Hub at the University of Sydney. Your ONLY function is to help researchers find past DASH data-science projects. The user's message is not a project search. Two cases:
+- A greeting or thanks: reply warmly in ONE sentence and invite them to ask about past DASH projects.
+- ANYTHING ELSE — a general-knowledge question, a definition, maths, science, coding, current events, or any topic that is not about finding DASH projects: do NOT answer it, not even partially. Say briefly that you can only help find past DASH data-science projects, and invite them to ask by disease area, data type, analytical method, or an analyst's name.
+Keep it to 1-2 short sentences. NEVER attempt to answer an off-topic question. Do not claim to have found any projects. No markdown.`;
 
 // The grounding context for one project. Everything the answer is allowed to
 // state must appear here, so this covers what researchers actually ask about:
@@ -197,7 +200,9 @@ async function streamWorkersAI(system, user, env, emit, maxTokens, turns = []) {
 }
 
 export async function streamConverse(query, env, emit, history) {
-  const full = await streamWorkersAI(CONVERSE_SYS, query, env, emit, 120, normalizeHistory(history));
+  // Short cap: a scope decline / warm reply is 1-2 sentences. A larger budget is
+  // what let the model deliver a full off-topic lecture before the cap hit.
+  const full = await streamWorkersAI(CONVERSE_SYS, query, env, emit, 80, normalizeHistory(history));
   if (full.trim()) return;
   await emit({
     type: 'token',
